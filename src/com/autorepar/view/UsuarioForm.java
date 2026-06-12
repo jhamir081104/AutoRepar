@@ -1,5 +1,6 @@
 package com.autorepar.view;
 
+import com.autorepar.controller.UsuarioController;
 import com.autorepar.dao.UsuarioDAO;
 import com.autorepar.model.Usuario;
 import javax.swing.*;
@@ -9,7 +10,7 @@ import java.util.List;
 
 public class UsuarioForm extends JFrame {
     private Usuario usuarioActual;
-    private UsuarioDAO usuarioDAO;
+    private UsuarioController usuarioController;
     private JTable tblUsuarios;
     private DefaultTableModel tableModel;
     private JTextField txtNombre, txtEmail, txtPassword;
@@ -20,7 +21,7 @@ public class UsuarioForm extends JFrame {
 
     public UsuarioForm(Usuario usuario) {
         this.usuarioActual = usuario;
-        this.usuarioDAO = new UsuarioDAO();
+        this.usuarioController= new UsuarioController();
         initComponents();
         cargarUsuarios();
         aplicarPermisosPorRol();
@@ -195,7 +196,7 @@ public class UsuarioForm extends JFrame {
     }
 
     private void cargarUsuarios() {
-        List<Usuario> usuarios = usuarioDAO.listarTodos();
+        List<Usuario> usuarios = usuarioController.listarTodos();
         tableModel.setRowCount(0);
         
         String rolActual = usuarioActual.getRol();
@@ -253,7 +254,7 @@ public class UsuarioForm extends JFrame {
                 return;
             }
             
-            if (usuarioDAO.emailExiste(email)) {
+            if (usuarioController.emailExiste(email)) {
                 JOptionPane.showMessageDialog(this, "Este email ya está registrado", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
@@ -264,7 +265,7 @@ public class UsuarioForm extends JFrame {
             usuario.setPassword(txtPassword.getText().trim());
             usuario.setRol(rolSeleccionado);
 
-            if (usuarioDAO.insertar(usuario)) {
+            if (usuarioController.guardar(usuario)) {
                 JOptionPane.showMessageDialog(this, "Usuario creado con éxito. ¡Ya puede iniciar sesión!");
                 limpiarFormulario();
                 cargarUsuarios();
@@ -290,7 +291,7 @@ public class UsuarioForm extends JFrame {
         String nuevoEmail = txtEmail.getText().trim();
         String emailOriginal = (String) tableModel.getValueAt(tblUsuarios.getSelectedRow(), 2);
         
-        if (!nuevoEmail.equals(emailOriginal) && usuarioDAO.emailExiste(nuevoEmail)) {
+        if (!nuevoEmail.equals(emailOriginal) && usuarioController.emailExiste(nuevoEmail)) {
             JOptionPane.showMessageDialog(this, 
                 "El email '" + nuevoEmail + "' ya está registrado por otro usuario",
                 "Error", JOptionPane.ERROR_MESSAGE);
@@ -308,7 +309,7 @@ public class UsuarioForm extends JFrame {
                 usuario.setPassword(txtPassword.getText().trim());
             }
 
-            if (usuarioDAO.actualizar(usuario)) {
+            if (usuarioController.actualizar(usuario)) {
                 JOptionPane.showMessageDialog(this, "Usuario actualizado con éxito");
                 limpiarFormulario();
                 cargarUsuarios();
@@ -345,7 +346,7 @@ public class UsuarioForm extends JFrame {
             "Confirmar Eliminación", JOptionPane.YES_NO_OPTION);
             
         if (confirm == JOptionPane.YES_OPTION) {
-            if (usuarioDAO.eliminar(selectedId)) {
+            if (usuarioController.eliminar(selectedId)) {
                 JOptionPane.showMessageDialog(this, "Usuario eliminado");
                 limpiarFormulario();
                 cargarUsuarios();

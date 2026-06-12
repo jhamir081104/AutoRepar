@@ -1,5 +1,6 @@
 package com.autorepar.view;
 
+import com.autorepar.controller.CitaController;
 import com.autorepar.dao.*;
 import com.autorepar.model.*;
 import javax.swing.*;
@@ -12,10 +13,7 @@ import java.util.List;
 
 public class CitaForm extends JFrame {
     private Usuario usuarioActual;
-    private CitaDAO citaDAO;
-    private ClienteDAO clienteDAO;
-    private VehiculoDAO vehiculoDAO;
-    private UsuarioDAO usuarioDAO;
+    private CitaController citaController;
     private JTable tblCitas;
     private DefaultTableModel tableModel;
     private JComboBox<Cliente> cbCliente;
@@ -27,10 +25,7 @@ public class CitaForm extends JFrame {
 
     public CitaForm(Usuario usuario) {
         this.usuarioActual = usuario;
-        this.citaDAO = new CitaDAO();
-        this.clienteDAO = new ClienteDAO();
-        this.vehiculoDAO = new VehiculoDAO();
-        this.usuarioDAO = new UsuarioDAO();
+        this.citaController = new CitaController();
         initComponents();
         cargarCitas();
         cargarCombos();
@@ -173,13 +168,13 @@ public class CitaForm extends JFrame {
     }
 
     private void cargarCombos() {
-        List<Cliente> clientes = clienteDAO.listarTodos();
+        List<Cliente> clientes = citaController.listarClientes();
         cbCliente.removeAllItems();
         for (Cliente c : clientes) {
             cbCliente.addItem(c);
         }
 
-        List<Usuario> mecanicos = usuarioDAO.listarMecanicos();
+        List<Usuario> mecanicos = citaController.listarMecanicos();
         cbMecanico.removeAllItems();
         for (Usuario u : mecanicos) {
             cbMecanico.addItem(u);
@@ -192,7 +187,7 @@ public class CitaForm extends JFrame {
     private void actualizarVehiculosPorCliente() {
         Cliente cliente = (Cliente) cbCliente.getSelectedItem();
         if (cliente != null) {
-            List<Vehiculo> vehiculos = vehiculoDAO.listarPorCliente(cliente.getId());
+            List<Vehiculo> vehiculos = citaController.listarVehiculosPorCliente(cliente.getId());
             cbVehiculo.removeAllItems();
             for (Vehiculo v : vehiculos) {
                 cbVehiculo.addItem(v);
@@ -201,12 +196,12 @@ public class CitaForm extends JFrame {
     }
 
     private void cargarCitas() {
-        List<Cita> citas = citaDAO.listarTodas();
+        List<Cita> citas = citaController.listarCitas();
         tableModel.setRowCount(0);
         for (Cita c : citas) {
-            Cliente cliente = clienteDAO.obtenerPorId(c.getClienteId());
-            Vehiculo vehiculo = vehiculoDAO.obtenerPorId(c.getVehiculoId());
-            Usuario mecanico = usuarioDAO.obtenerPorId(c.getMecanicoId());
+            Cliente cliente = citaController.obtenerCliente(c.getClienteId());
+            Vehiculo vehiculo = citaController.obtenerVehiculo(c.getVehiculoId());
+            Usuario mecanico = citaController.obtenerUsuario(c.getMecanicoId());
             
             tableModel.addRow(new Object[]{
                 c.getId(), c.getFecha().toString(), c.getHora().toString(),
@@ -259,8 +254,8 @@ public class CitaForm extends JFrame {
             cita.setVehiculoId(((Vehiculo) cbVehiculo.getSelectedItem()).getId());
             cita.setMecanicoId(((Usuario) cbMecanico.getSelectedItem()).getId());
 
-            if (citaDAO.verificarDisponibilidad(cita.getFecha(), cita.getHora(), cita.getMecanicoId())) {
-                if (citaDAO.insertar(cita)) {
+            if (citaController.guardar(cita)) {
+                if (citaController.guardar(cita)) {
                     JOptionPane.showMessageDialog(this, "Cita registrada");
                     limpiarFormulario();
                     cargarCitas();
@@ -289,7 +284,7 @@ public class CitaForm extends JFrame {
             cita.setVehiculoId(((Vehiculo) cbVehiculo.getSelectedItem()).getId());
             cita.setMecanicoId(((Usuario) cbMecanico.getSelectedItem()).getId());
 
-            if (citaDAO.actualizar(cita)) {
+            if (citaController.actualizar(cita)) {
                 JOptionPane.showMessageDialog(this, "Cita actualizada");
                 limpiarFormulario();
                 cargarCitas();
@@ -306,12 +301,13 @@ public class CitaForm extends JFrame {
         }
         int confirm = JOptionPane.showConfirmDialog(this, "¿Cancelar esta cita?", "Confirmar", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
-            if (citaDAO.cancelar(selectedId)) {
+            if (citaController.cancelar(selectedId)) {
                 JOptionPane.showMessageDialog(this, "Cita cancelada");
                 limpiarFormulario();
                 cargarCitas();
                 selectedId = -1;
             }
+            
         }
     }
 

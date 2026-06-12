@@ -1,16 +1,20 @@
 package com.autorepar.view;
 
+import com.autorepar.controller.LoginController;
 import com.autorepar.dao.UsuarioDAO;
 import com.autorepar.model.Usuario;
 import javax.swing.*;
 import java.awt.*;
 
 public class LoginForm extends JFrame {
+
     private JTextField txtEmail;
     private JPasswordField txtPassword;
+    private LoginController controller;
 
     public LoginForm() {
         initComponents();
+        controller = new LoginController(this);
     }
 
     private void initComponents() {
@@ -78,20 +82,21 @@ public class LoginForm extends JFrame {
         btnLogin.setFocusPainted(false);
         btnLogin.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnLogin.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(0, 100, 0), 2),
-            BorderFactory.createEmptyBorder(10, 20, 10, 20)
+                BorderFactory.createLineBorder(new Color(0, 100, 0), 2),
+                BorderFactory.createEmptyBorder(10, 20, 10, 20)
         ));
-        
+
         // Efecto hover
         btnLogin.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 btnLogin.setBackground(new Color(0, 180, 0));
             }
+
             public void mouseExited(java.awt.event.MouseEvent evt) {
                 btnLogin.setBackground(new Color(0, 150, 0));
             }
         });
-        
+
         gbc.gridy = 4;
         gbc.gridx = 0;
         gbc.gridwidth = 2;
@@ -99,7 +104,7 @@ public class LoginForm extends JFrame {
         gbc.insets = new Insets(20, 15, 10, 15);
         mainPanel.add(btnLogin, gbc);
 
-        btnLogin.addActionListener(e -> realizarLogin());
+        btnLogin.addActionListener(e -> controller.realizarLogin());
 
         // Enter key listener
         getRootPane().setDefaultButton(btnLogin);
@@ -107,36 +112,12 @@ public class LoginForm extends JFrame {
         add(mainPanel);
     }
 
-    private void realizarLogin() {
-        String email = txtEmail.getText().trim();
-        String password = new String(txtPassword.getPassword());
+    public JTextField getTxtEmail() {
+        return txtEmail;
+    }
 
-        if (email.isEmpty() || password.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                "Por favor complete todos los campos",
-                "Campos Vacíos",
-                JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        UsuarioDAO dao = new UsuarioDAO();
-        Usuario usuario = dao.login(email, password);
-
-        if (usuario != null) {
-            JOptionPane.showMessageDialog(this,
-                "¡Bienvenido " + usuario.getNombre() + "!",
-                "Éxito",
-                JOptionPane.INFORMATION_MESSAGE);
-            new DashboardForm(usuario).setVisible(true);
-            this.dispose();
-        } else {
-            JOptionPane.showMessageDialog(this,
-                "Email o contraseña incorrectos.\n\nCredenciales por defecto:\nEmail: admin@autorepar.com\nContraseña: admin123",
-                "Error de Autenticación",
-                JOptionPane.ERROR_MESSAGE);
-            txtPassword.setText("");
-            txtPassword.requestFocus();
-        }
+    public JPasswordField getTxtPassword() {
+        return txtPassword;
     }
 
     public static void main(String[] args) {

@@ -1,5 +1,6 @@
 package com.autorepar.view;
 
+import com.autorepar.controller.DashboardController;
 import com.autorepar.dao.CitaDAO;
 import com.autorepar.model.Usuario;
 import com.autorepar.model.Cita;
@@ -11,6 +12,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class DashboardForm extends JFrame {
+
+    private DashboardController controller;
     private Usuario usuarioActual;
     private JTable tblCitasHoy;
     private DefaultTableModel tableModel;
@@ -21,7 +24,8 @@ public class DashboardForm extends JFrame {
     public DashboardForm(Usuario usuario) {
         this.usuarioActual = usuario;
         initComponents();
-        cargarCitasDelDia();
+        controller = new DashboardController(this, usuarioActual);
+        controller.cargarCitasDelDia();
     }
 
     private void initComponents() {
@@ -77,25 +81,25 @@ public class DashboardForm extends JFrame {
     private JPanel crearCenterPanel() {
         JPanel center = new JPanel(new BorderLayout(10, 10));
         center.setBackground(Color.WHITE);
-        
+
         JPanel borderPanel = new JPanel(new BorderLayout());
         borderPanel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(0, 102, 204), 2),
-            BorderFactory.createEmptyBorder(10, 10, 10, 10)
+                BorderFactory.createLineBorder(new Color(0, 102, 204), 2),
+                BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
-        
+
         JLabel lblTituloSeccion = new JLabel("📅 Citas Programadas para Hoy");
         lblTituloSeccion.setFont(new Font("Arial", Font.BOLD, 14));
         lblTituloSeccion.setForeground(new Color(0, 102, 204));
         borderPanel.add(lblTituloSeccion, BorderLayout.NORTH);
-        
+
         JPanel summaryPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         summaryPanel.setBackground(Color.WHITE);
         lblCitasCount = new JLabel("Cargando citas...");
         lblCitasCount.setFont(new Font("Arial", Font.BOLD, 12));
         summaryPanel.add(lblCitasCount);
         borderPanel.add(summaryPanel, BorderLayout.CENTER);
-        
+
         center.add(borderPanel, BorderLayout.NORTH);
 
         String[] columnas = {"ID", "Hora", "Cliente ID", "Vehículo ID", "Mecánico ID", "Estado", "Descripción"};
@@ -133,12 +137,12 @@ public class DashboardForm extends JFrame {
         botonesList.add(new String[]{"📅", "Citas", "citas"});
         botonesList.add(new String[]{"🔧", "Historial", "historial"});
         botonesList.add(new String[]{"📊", "Reportes", "reportes"});
-        
+
         // Solo mostrar el botón de Usuarios si es ADMIN o RECEPCION
         if (usuarioActual.getRol().equals("ADMIN") || usuarioActual.getRol().equals("RECEPCION")) {
             botonesList.add(new String[]{"👥", "Usuarios", "usuarios"});
         }
-        
+
         botonesList.add(new String[]{"🚪", "Cerrar Sesión", "logout"});
 
         for (String[] btn : botonesList) {
@@ -153,51 +157,52 @@ public class DashboardForm extends JFrame {
             button.setFocusPainted(false);
             button.setCursor(new Cursor(Cursor.HAND_CURSOR));
             button.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(180, 180, 180), 1),
-                BorderFactory.createEmptyBorder(8, 15, 8, 15)
+                    BorderFactory.createLineBorder(new Color(180, 180, 180), 1),
+                    BorderFactory.createEmptyBorder(8, 15, 8, 15)
             ));
-            
+
             button.addMouseListener(new java.awt.event.MouseAdapter() {
                 public void mouseEntered(java.awt.event.MouseEvent evt) {
                     button.setBackground(new Color(200, 220, 240));
                     button.setBorder(BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(new Color(0, 102, 204), 2),
-                        BorderFactory.createEmptyBorder(7, 14, 7, 14)
+                            BorderFactory.createLineBorder(new Color(0, 102, 204), 2),
+                            BorderFactory.createEmptyBorder(7, 14, 7, 14)
                     ));
                 }
+
                 public void mouseExited(java.awt.event.MouseEvent evt) {
                     button.setBackground(new Color(240, 240, 240));
                     button.setBorder(BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(new Color(180, 180, 180), 1),
-                        BorderFactory.createEmptyBorder(8, 15, 8, 15)
+                            BorderFactory.createLineBorder(new Color(180, 180, 180), 1),
+                            BorderFactory.createEmptyBorder(8, 15, 8, 15)
                     ));
                 }
             });
 
             switch (btn[2]) {
                 case "dashboard":
-                    button.addActionListener(e -> cargarCitasDelDia());
+                    button.addActionListener(e -> controller.cargarCitasDelDia());
                     break;
                 case "clientes":
-                    button.addActionListener(e -> abrirClientes());
+                    button.addActionListener(e -> controller.abrirCitas());
                     break;
                 case "vehiculos":
-                    button.addActionListener(e -> abrirVehiculos());
+                    button.addActionListener(e -> controller.abrirVehiculos());
                     break;
                 case "citas":
-                    button.addActionListener(e -> abrirCitas());
+                    button.addActionListener(e -> controller.abrirVehiculos());
                     break;
                 case "historial":
-                    button.addActionListener(e -> abrirHistorial());
+                    button.addActionListener(e -> controller.abrirHistorial());
                     break;
                 case "reportes":
-                    button.addActionListener(e -> abrirReportes());
+                    button.addActionListener(e -> controller.abrirReportes());
                     break;
                 case "usuarios":
-                    button.addActionListener(e -> abrirUsuarios());
+                    button.addActionListener(e -> controller.abrirUsuarios());
                     break;
                 case "logout":
-                    button.addActionListener(e -> cerrarSesion());
+                    button.addActionListener(e -> controller.cerrarSesion());
                     break;
             }
 
@@ -208,69 +213,15 @@ public class DashboardForm extends JFrame {
         return nav;
     }
 
-    private void cargarCitasDelDia() {
-        try {
-            CitaDAO citaDAO = new CitaDAO();
-            List<Cita> citas = citaDAO.listarPorFecha(LocalDate.now());
-
-            tableModel.setRowCount(0);
-            for (Cita cita : citas) {
-                tableModel.addRow(new Object[]{
-                    cita.getId(),
-                    cita.getHora().toString(),
-                    cita.getClienteId(),
-                    cita.getVehiculoId(),
-                    cita.getMecanicoId(),
-                    cita.getEstado(),
-                    cita.getDescripcion() != null ? cita.getDescripcion() : ""
-                });
-            }
-
-            lblCitasCount.setText("Total de citas hoy: " + citas.size());
-        } catch (Exception e) {
-            System.out.println("Error al cargar citas: " + e.getMessage());
-            lblCitasCount.setText("Error al cargar citas");
-        }
+    public DefaultTableModel getTableModel() {
+        return tableModel;
     }
 
-    private void abrirClientes() {
-        new ClienteForm(usuarioActual).setVisible(true);
-        this.dispose();
+    public JLabel getLblCitasCount() {
+        return lblCitasCount;
     }
 
-    private void abrirVehiculos() {
-        new VehiculoForm(usuarioActual).setVisible(true);
-        this.dispose();
-    }
-
-    private void abrirCitas() {
-        new CitaForm(usuarioActual).setVisible(true);
-        this.dispose();
-    }
-
-    private void abrirHistorial() {
-        new HistorialForm(usuarioActual).setVisible(true);
-        this.dispose();
-    }
-
-    private void abrirReportes() {
-        new ReporteForm(usuarioActual).setVisible(true);
-        this.dispose();
-    }
-
-    private void abrirUsuarios() {
-        new UsuarioForm(usuarioActual).setVisible(true);
-        this.dispose();
-    }
-
-    private void cerrarSesion() {
-        int confirm = JOptionPane.showConfirmDialog(this,
-            "¿Está seguro que desea cerrar sesión?",
-            "Cerrar Sesión",
-            JOptionPane.YES_NO_OPTION);
-        if (confirm == JOptionPane.YES_OPTION) {
-            new LoginForm().setVisible(true);
-            this.dispose();
-        }
+    public Usuario getUsuarioActual() {
+        return usuarioActual;
     }
 }

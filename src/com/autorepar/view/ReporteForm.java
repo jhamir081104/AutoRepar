@@ -1,5 +1,6 @@
 package com.autorepar.view;
 
+import com.autorepar.controller.ReportController;
 import com.autorepar.dao.ServicioDAO;
 import com.autorepar.model.Servicio;
 import com.autorepar.model.Usuario;
@@ -24,7 +25,7 @@ import java.util.List;
 
 public class ReporteForm extends JFrame {
     private Usuario usuarioActual;
-    private ServicioDAO servicioDAO;
+    private ReportController reportController;
     private JTable tblReporte;
     private DefaultTableModel tableModel;
     private JTextField txtFechaInicio, txtFechaFin;
@@ -32,7 +33,7 @@ public class ReporteForm extends JFrame {
 
     public ReporteForm(Usuario usuario) {
         this.usuarioActual = usuario;
-        this.servicioDAO = new ServicioDAO();
+        this.reportController = new ReportController();
         initComponents();
         cargarReportePorDefecto();
     }
@@ -147,8 +148,8 @@ public class ReporteForm extends JFrame {
                 return;
             }
             
-            List<Servicio> servicios = servicioDAO.listarPorRangoFechas(inicio, fin);
-            double total = servicioDAO.obtenerTotalServiciosPorRango(inicio, fin);
+            List<Servicio> servicios = reportController.obtenerServiciosPorRango(inicio, fin);
+            double total = reportController.obtenerTotalPorRango(inicio, fin);
             
             tableModel.setRowCount(0);
             for (Servicio s : servicios) {

@@ -1,5 +1,6 @@
 package com.autorepar.view;
 
+import com.autorepar.controller.VehiculoController;
 import com.autorepar.dao.ClienteDAO;
 import com.autorepar.dao.VehiculoDAO;
 import com.autorepar.model.Cliente;
@@ -12,8 +13,7 @@ import java.util.List;
 
 public class VehiculoForm extends JFrame {
     private Usuario usuarioActual;
-    private VehiculoDAO vehiculoDAO;
-    private ClienteDAO clienteDAO;
+    private VehiculoController vehiculoController;
     private JTable tblVehiculos;
     private DefaultTableModel tableModel;
     private JComboBox<Cliente> cbCliente;
@@ -22,8 +22,7 @@ public class VehiculoForm extends JFrame {
 
     public VehiculoForm(Usuario usuario) {
         this.usuarioActual = usuario;
-        this.vehiculoDAO = new VehiculoDAO();
-        this.clienteDAO = new ClienteDAO();
+        this.vehiculoController = new VehiculoController();
         initComponents();
         cargarVehiculos();
         cargarClientes();
@@ -158,7 +157,7 @@ public class VehiculoForm extends JFrame {
 
     // ============ MÉTODO CORREGIDO ============
     private void cargarClientes() {
-        List<Cliente> clientes = clienteDAO.listarTodos();
+        List<Cliente> clientes = vehiculoController.listarClientes();
         cbCliente.removeAllItems();
         for (Cliente c : clientes) {
             cbCliente.addItem(c);  // Ahora mostrará el nombre gracias a toString()
@@ -173,10 +172,10 @@ public class VehiculoForm extends JFrame {
     }
 
     private void cargarVehiculos() {
-        List<Vehiculo> vehiculos = vehiculoDAO.listarTodos();
+        List<Vehiculo> vehiculos = vehiculoController.listarVehiculos();
         tableModel.setRowCount(0);
         for (Vehiculo v : vehiculos) {
-            Cliente c = clienteDAO.obtenerPorId(v.getClienteId());
+            Cliente c = vehiculoController.obtenerCliente(v.getClienteId());
             String clienteNombre = c != null ? c.getNombreCompleto() : "N/A";
             tableModel.addRow(new Object[]{
                 v.getId(), v.getPlaca(), v.getMarca(), v.getModelo(),
@@ -222,7 +221,7 @@ public class VehiculoForm extends JFrame {
             v.setColor(txtColor.getText().trim());
             v.setClienteId(clienteSeleccionado.getId());
 
-            if (vehiculoDAO.insertar(v)) {
+            if (vehiculoController.guardarVehiculo(v)) {
                 JOptionPane.showMessageDialog(this, "Vehículo registrado con éxito");
                 limpiarFormulario();
                 cargarVehiculos();
@@ -253,7 +252,7 @@ public class VehiculoForm extends JFrame {
             v.setColor(txtColor.getText().trim());
             v.setClienteId(clienteSeleccionado.getId());
 
-            if (vehiculoDAO.actualizar(v)) {
+            if (vehiculoController.guardarVehiculo(v)) {
                 JOptionPane.showMessageDialog(this, "Vehículo actualizado");
                 limpiarFormulario();
                 cargarVehiculos();
@@ -270,7 +269,7 @@ public class VehiculoForm extends JFrame {
         }
         int confirm = JOptionPane.showConfirmDialog(this, "¿Eliminar vehículo?", "Confirmar", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
-            if (vehiculoDAO.eliminar(selectedId)) {
+            if (vehiculoController.eliminarVehiculo(selectedId)) {
                 JOptionPane.showMessageDialog(this, "Vehículo eliminado");
                 limpiarFormulario();
                 cargarVehiculos();

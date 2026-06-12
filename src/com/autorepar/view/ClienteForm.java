@@ -1,5 +1,6 @@
 package com.autorepar.view;
 
+import com.autorepar.controller.ClienteController;
 import com.autorepar.dao.ClienteDAO;
 import com.autorepar.model.Cliente;
 import com.autorepar.model.Usuario;
@@ -10,7 +11,7 @@ import java.util.List;
 
 public class ClienteForm extends JFrame {
     private Usuario usuarioActual;
-    private ClienteDAO clienteDAO;
+    private ClienteController clienteController;
     private JTable tblClientes;
     private DefaultTableModel tableModel;
     private JTextField txtBuscar;
@@ -19,7 +20,7 @@ public class ClienteForm extends JFrame {
 
     public ClienteForm(Usuario usuario) {
         this.usuarioActual = usuario;
-        this.clienteDAO = new ClienteDAO();
+        this.clienteController = new ClienteController();
         initComponents();
         cargarClientes();
     }
@@ -163,7 +164,7 @@ public class ClienteForm extends JFrame {
     }
 
     private void cargarClientes() {
-        List<Cliente> clientes = clienteDAO.listarTodos();
+        List<Cliente> clientes = clienteController.listarTodos();
         tableModel.setRowCount(0);
         for (Cliente c : clientes) {
             tableModel.addRow(new Object[]{
@@ -177,9 +178,9 @@ public class ClienteForm extends JFrame {
         String texto = txtBuscar.getText().trim();
         List<Cliente> clientes;
         if (texto.isEmpty()) {
-            clientes = clienteDAO.listarTodos();
+            clientes = clienteController.listarTodos();
         } else {
-            clientes = clienteDAO.buscar(texto);
+            clientes = clienteController.buscar(texto);
         }
         tableModel.setRowCount(0);
         for (Cliente c : clientes) {
@@ -211,7 +212,7 @@ public class ClienteForm extends JFrame {
             cliente.setEmail(txtEmail.getText().trim());
             cliente.setDireccion(txtDireccion.getText().trim());
 
-            if (clienteDAO.insertar(cliente)) {
+            if (clienteController.guardar(cliente)) {
                 JOptionPane.showMessageDialog(this, "Cliente registrado con éxito");
                 limpiarFormulario();
                 cargarClientes();
@@ -235,7 +236,7 @@ public class ClienteForm extends JFrame {
             cliente.setEmail(txtEmail.getText().trim());
             cliente.setDireccion(txtDireccion.getText().trim());
 
-            if (clienteDAO.actualizar(cliente)) {
+            if (clienteController.actualizar(cliente)) {
                 JOptionPane.showMessageDialog(this, "Cliente actualizado con éxito");
                 limpiarFormulario();
                 cargarClientes();
@@ -252,7 +253,7 @@ public class ClienteForm extends JFrame {
         }
         int confirm = JOptionPane.showConfirmDialog(this, "¿Eliminar este cliente?", "Confirmar", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
-            if (clienteDAO.eliminar(selectedId)) {
+            if (clienteController.eliminar(selectedId)) {
                 JOptionPane.showMessageDialog(this, "Cliente eliminado");
                 limpiarFormulario();
                 cargarClientes();
