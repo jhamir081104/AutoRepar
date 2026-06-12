@@ -36,4 +36,10 @@ public class Cliente {
     public String getNombreCompleto() {
         return nombre + " " + apellido;
     }
+    
+    // IMPORTANTE: Sobrescribir toString() para que muestre el nombre en el combo box
+    @Override
+    public String toString() {
+        return nombre + " " + apellido + " (" + telefono + ")";
+    }
 }

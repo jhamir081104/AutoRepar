@@ -52,6 +52,7 @@ public class VehiculoForm extends JFrame {
 
     private JPanel crearTopPanel() {
         JPanel top = new JPanel(new BorderLayout());
+        
         JLabel lblTitle = new JLabel("Gestión de Vehículos");
         lblTitle.setFont(new Font("Arial", Font.BOLD, 24));
         lblTitle.setForeground(new Color(0, 102, 204));
@@ -97,7 +98,7 @@ public class VehiculoForm extends JFrame {
         gbc.gridx = 0; gbc.gridy = 0;
         form.add(new JLabel("Cliente:"), gbc);
         cbCliente = new JComboBox<>();
-        cbCliente.setPreferredSize(new Dimension(200, 25));
+        cbCliente.setPreferredSize(new Dimension(250, 25));
         gbc.gridx = 1;
         form.add(cbCliente, gbc);
 
@@ -155,11 +156,19 @@ public class VehiculoForm extends JFrame {
         return form;
     }
 
+    // ============ MÉTODO CORREGIDO ============
     private void cargarClientes() {
         List<Cliente> clientes = clienteDAO.listarTodos();
         cbCliente.removeAllItems();
         for (Cliente c : clientes) {
-            cbCliente.addItem(c);
+            cbCliente.addItem(c);  // Ahora mostrará el nombre gracias a toString()
+        }
+        
+        // Si no hay clientes, mostrar mensaje
+        if (clientes.isEmpty()) {
+            JOptionPane.showMessageDialog(this, 
+                "No hay clientes registrados. Debe registrar un cliente primero.",
+                "Advertencia", JOptionPane.WARNING_MESSAGE);
         }
     }
 
@@ -188,7 +197,8 @@ public class VehiculoForm extends JFrame {
             
             String clienteNombre = (String) tableModel.getValueAt(row, 6);
             for (int i = 0; i < cbCliente.getItemCount(); i++) {
-                if (cbCliente.getItemAt(i).getNombreCompleto().equals(clienteNombre)) {
+                Cliente cliente = cbCliente.getItemAt(i);
+                if (cliente != null && cliente.getNombreCompleto().equals(clienteNombre)) {
                     cbCliente.setSelectedIndex(i);
                     break;
                 }
@@ -198,13 +208,19 @@ public class VehiculoForm extends JFrame {
 
     private void guardarVehiculo() {
         if (validarCampos()) {
+            Cliente clienteSeleccionado = (Cliente) cbCliente.getSelectedItem();
+            if (clienteSeleccionado == null) {
+                JOptionPane.showMessageDialog(this, "Debe seleccionar un cliente", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
             Vehiculo v = new Vehiculo();
-            v.setPlaca(txtPlaca.getText().trim());
+            v.setPlaca(txtPlaca.getText().trim().toUpperCase());
             v.setMarca(txtMarca.getText().trim());
             v.setModelo(txtModelo.getText().trim());
             v.setAnio(Integer.parseInt(txtAnio.getText().trim()));
             v.setColor(txtColor.getText().trim());
-            v.setClienteId(((Cliente) cbCliente.getSelectedItem()).getId());
+            v.setClienteId(clienteSeleccionado.getId());
 
             if (vehiculoDAO.insertar(v)) {
                 JOptionPane.showMessageDialog(this, "Vehículo registrado con éxito");
@@ -222,14 +238,20 @@ public class VehiculoForm extends JFrame {
             return;
         }
         if (validarCampos()) {
+            Cliente clienteSeleccionado = (Cliente) cbCliente.getSelectedItem();
+            if (clienteSeleccionado == null) {
+                JOptionPane.showMessageDialog(this, "Debe seleccionar un cliente", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
             Vehiculo v = new Vehiculo();
             v.setId(selectedId);
-            v.setPlaca(txtPlaca.getText().trim());
+            v.setPlaca(txtPlaca.getText().trim().toUpperCase());
             v.setMarca(txtMarca.getText().trim());
             v.setModelo(txtModelo.getText().trim());
             v.setAnio(Integer.parseInt(txtAnio.getText().trim()));
             v.setColor(txtColor.getText().trim());
-            v.setClienteId(((Cliente) cbCliente.getSelectedItem()).getId());
+            v.setClienteId(clienteSeleccionado.getId());
 
             if (vehiculoDAO.actualizar(v)) {
                 JOptionPane.showMessageDialog(this, "Vehículo actualizado");
@@ -242,7 +264,10 @@ public class VehiculoForm extends JFrame {
     }
 
     private void eliminarVehiculo() {
-        if (selectedId == -1) return;
+        if (selectedId == -1) {
+            JOptionPane.showMessageDialog(this, "Seleccione un vehículo para eliminar");
+            return;
+        }
         int confirm = JOptionPane.showConfirmDialog(this, "¿Eliminar vehículo?", "Confirmar", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
             if (vehiculoDAO.eliminar(selectedId)) {
@@ -250,6 +275,8 @@ public class VehiculoForm extends JFrame {
                 limpiarFormulario();
                 cargarVehiculos();
                 selectedId = -1;
+            } else {
+                JOptionPane.showMessageDialog(this, "Error al eliminar", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -271,6 +298,10 @@ public class VehiculoForm extends JFrame {
             JOptionPane.showMessageDialog(this, "Ingrese el modelo");
             return false;
         }
+        if (txtAnio.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Ingrese el año");
+            return false;
+        }
         try {
             Integer.parseInt(txtAnio.getText().trim());
         } catch (NumberFormatException e) {
@@ -286,6 +317,9 @@ public class VehiculoForm extends JFrame {
         txtModelo.setText("");
         txtAnio.setText("");
         txtColor.setText("");
+        if (cbCliente.getItemCount() > 0) {
+            cbCliente.setSelectedIndex(0);
+        }
         selectedId = -1;
         tblVehiculos.clearSelection();
     }

@@ -1,32 +1,45 @@
 package com.autorepar.view;
 
 import com.autorepar.dao.CitaDAO;
+import com.autorepar.dao.ClienteDAO;
+import com.autorepar.dao.VehiculoDAO;
+import com.autorepar.dao.UsuarioDAO;
 import com.autorepar.model.Usuario;
 import com.autorepar.model.Cita;
+import com.autorepar.model.Cliente;
+import com.autorepar.model.Vehiculo;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 public class DashboardForm extends JFrame {
     private Usuario usuarioActual;
-    private JTable tblCitasHoy;
+    private JTable tblCitas;
     private DefaultTableModel tableModel;
     private JLabel lblBienvenida;
     private JLabel lblFechaActual;
     private JLabel lblCitasCount;
+    
+    private ClienteDAO clienteDAO;
+    private VehiculoDAO vehiculoDAO;
+    private UsuarioDAO usuarioDAO;
 
     public DashboardForm(Usuario usuario) {
         this.usuarioActual = usuario;
+        this.clienteDAO = new ClienteDAO();
+        this.vehiculoDAO = new VehiculoDAO();
+        this.usuarioDAO = new UsuarioDAO();
         initComponents();
-        cargarCitasDelDia();
+        cargarCitasActivas();
     }
 
     private void initComponents() {
         setTitle("AutoRepar - Dashboard");
-        setSize(1100, 700);
+        setSize(1300, 750);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -84,34 +97,34 @@ public class DashboardForm extends JFrame {
             BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
         
-        JLabel lblTituloSeccion = new JLabel("📅 Citas Programadas para Hoy");
+        JLabel lblTituloSeccion = new JLabel("📋 Citas Activas (no pagadas)");
         lblTituloSeccion.setFont(new Font("Arial", Font.BOLD, 14));
         lblTituloSeccion.setForeground(new Color(0, 102, 204));
         borderPanel.add(lblTituloSeccion, BorderLayout.NORTH);
         
         JPanel summaryPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         summaryPanel.setBackground(Color.WHITE);
-        lblCitasCount = new JLabel("Cargando citas...");
+        lblCitasCount = new JLabel("Cargando...");
         lblCitasCount.setFont(new Font("Arial", Font.BOLD, 12));
         summaryPanel.add(lblCitasCount);
         borderPanel.add(summaryPanel, BorderLayout.CENTER);
         
         center.add(borderPanel, BorderLayout.NORTH);
 
-        String[] columnas = {"ID", "Hora", "Cliente ID", "Vehículo ID", "Mecánico ID", "Estado", "Descripción"};
+        String[] columnas = {"ID", "Fecha", "Hora", "Cliente", "Vehículo", "Mecánico", "Estado", "Descripción"};
         tableModel = new DefaultTableModel(columnas, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
-        tblCitasHoy = new JTable(tableModel);
-        tblCitasHoy.setRowHeight(30);
-        tblCitasHoy.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
-        tblCitasHoy.setFont(new Font("Arial", Font.PLAIN, 12));
-        tblCitasHoy.setSelectionBackground(new Color(0, 102, 204, 80));
+        tblCitas = new JTable(tableModel);
+        tblCitas.setRowHeight(35);
+        tblCitas.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
+        tblCitas.setFont(new Font("Arial", Font.PLAIN, 12));
+        tblCitas.setSelectionBackground(new Color(0, 102, 204, 80));
 
-        JScrollPane scrollPane = new JScrollPane(tblCitasHoy);
+        JScrollPane scrollPane = new JScrollPane(tblCitas);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         center.add(scrollPane, BorderLayout.CENTER);
 
@@ -125,20 +138,38 @@ public class DashboardForm extends JFrame {
         nav.setPreferredSize(new Dimension(220, 0));
         nav.setBorder(BorderFactory.createEmptyBorder(20, 10, 20, 10));
 
-        // Lista de botones base
         java.util.ArrayList<String[]> botonesList = new java.util.ArrayList<>();
-        botonesList.add(new String[]{"🏠", "Dashboard", "dashboard"});
-        botonesList.add(new String[]{"👤", "Clientes", "clientes"});
-        botonesList.add(new String[]{"🚗", "Vehículos", "vehiculos"});
-        botonesList.add(new String[]{"📅", "Citas", "citas"});
-        botonesList.add(new String[]{"🔧", "Historial", "historial"});
-        botonesList.add(new String[]{"📊", "Reportes", "reportes"});
         
-        // Solo mostrar el botón de Usuarios si es ADMIN o RECEPCION
-        if (usuarioActual.getRol().equals("ADMIN") || usuarioActual.getRol().equals("RECEPCION")) {
+        // Dashboard - visible para todos
+        botonesList.add(new String[]{"🏠", "Dashboard", "dashboard"});
+        
+        // Clientes - visible para todos
+        botonesList.add(new String[]{"👤", "Clientes", "clientes"});
+        
+        // Vehículos - visible para todos
+        botonesList.add(new String[]{"🚗", "Vehículos", "vehiculos"});
+        
+        // Citas - visible solo para ADMIN y RECEPCION (no para MECANICO)
+        if (!usuarioActual.getRol().equals("MECANICO")) {
+            botonesList.add(new String[]{"📅", "Citas", "citas"});
+        }
+        
+        // Historial - visible solo para ADMIN y RECEPCION (no para MECANICO)
+        if (!usuarioActual.getRol().equals("MECANICO")) {
+            botonesList.add(new String[]{"🔧", "Historial", "historial"});
+        }
+        
+        // Reportes - visible solo para ADMIN
+        if (usuarioActual.getRol().equals("ADMIN")) {
+            botonesList.add(new String[]{"📊", "Reportes", "reportes"});
+        }
+        
+        // Usuarios - visible solo para ADMIN y RECEPCION (no para MECANICO)
+        if (!usuarioActual.getRol().equals("MECANICO")) {
             botonesList.add(new String[]{"👥", "Usuarios", "usuarios"});
         }
         
+        // Cerrar Sesión - visible para todos
         botonesList.add(new String[]{"🚪", "Cerrar Sesión", "logout"});
 
         for (String[] btn : botonesList) {
@@ -176,7 +207,7 @@ public class DashboardForm extends JFrame {
 
             switch (btn[2]) {
                 case "dashboard":
-                    button.addActionListener(e -> cargarCitasDelDia());
+                    button.addActionListener(e -> cargarCitasActivas());
                     break;
                 case "clientes":
                     button.addActionListener(e -> abrirClientes());
@@ -208,25 +239,40 @@ public class DashboardForm extends JFrame {
         return nav;
     }
 
-    private void cargarCitasDelDia() {
+    private void cargarCitasActivas() {
         try {
             CitaDAO citaDAO = new CitaDAO();
-            List<Cita> citas = citaDAO.listarPorFecha(LocalDate.now());
+            List<Cita> todas = citaDAO.listarTodas();
+            List<Cita> activas = new ArrayList<>();
+            for (Cita c : todas) {
+                if (!c.getEstado().equals("CANCELADA")) {
+                    activas.add(c);
+                }
+            }
 
             tableModel.setRowCount(0);
-            for (Cita cita : citas) {
+            for (Cita cita : activas) {
+                Cliente cliente = clienteDAO.obtenerPorId(cita.getClienteId());
+                Vehiculo vehiculo = vehiculoDAO.obtenerPorId(cita.getVehiculoId());
+                Usuario mecanico = usuarioDAO.obtenerPorId(cita.getMecanicoId());
+                
+                String nombreCliente = (cliente != null) ? cliente.getNombreCompleto() : "N/A";
+                String infoVehiculo = (vehiculo != null) ? vehiculo.getDescripcion() : "N/A";
+                String nombreMecanico = (mecanico != null) ? mecanico.getNombre() + " (" + mecanico.getRol() + ")" : "N/A";
+                
                 tableModel.addRow(new Object[]{
                     cita.getId(),
+                    cita.getFecha().toString(),
                     cita.getHora().toString(),
-                    cita.getClienteId(),
-                    cita.getVehiculoId(),
-                    cita.getMecanicoId(),
+                    nombreCliente,
+                    infoVehiculo,
+                    nombreMecanico,
                     cita.getEstado(),
-                    cita.getDescripcion() != null ? cita.getDescripcion() : ""
+                    cita.getDescripcion() != null && !cita.getDescripcion().isEmpty() ? cita.getDescripcion() : "Sin descripción"
                 });
             }
 
-            lblCitasCount.setText("Total de citas hoy: " + citas.size());
+            lblCitasCount.setText("Total de citas activas: " + activas.size());
         } catch (Exception e) {
             System.out.println("Error al cargar citas: " + e.getMessage());
             lblCitasCount.setText("Error al cargar citas");

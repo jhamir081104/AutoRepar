@@ -74,8 +74,13 @@ public class HistorialForm extends JFrame {
         JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         filterPanel.add(new JLabel("Seleccionar Vehículo:"));
         cbVehiculo = new JComboBox<>();
-        cbVehiculo.setPreferredSize(new Dimension(300, 25));
-        cbVehiculo.addActionListener(e -> cargarHistorial());
+        cbVehiculo.setPreferredSize(new Dimension(400, 25));
+        cbVehiculo.addActionListener(e -> {
+            // Solo cargar historial si el elemento seleccionado es un Vehiculo
+            if (cbVehiculo.getSelectedItem() instanceof Vehiculo) {
+                cargarHistorial();
+            }
+        });
         filterPanel.add(cbVehiculo);
         center.add(filterPanel, BorderLayout.NORTH);
         
@@ -100,51 +105,71 @@ public class HistorialForm extends JFrame {
     private void cargarVehiculos() {
         List<Vehiculo> vehiculos = vehiculoDAO.listarTodos();
         cbVehiculo.removeAllItems();
-        for (Vehiculo v : vehiculos) {
-            cbVehiculo.addItem(v);
-        }
-        if (vehiculos.size() > 0) {
-            cargarHistorial();
+        
+        if (vehiculos.isEmpty()) {
+            cbVehiculo.setEnabled(false);
+            JOptionPane.showMessageDialog(this, 
+                "No hay vehículos registrados en el sistema.\nDebe registrar vehículos primero.",
+                "Información", JOptionPane.INFORMATION_MESSAGE);
+            tableModel.setRowCount(0);
+        } else {
+            for (Vehiculo v : vehiculos) {
+                cbVehiculo.addItem(v);
+            }
+            cbVehiculo.setSelectedIndex(0);
+            cbVehiculo.setEnabled(true);
+            cargarHistorial(); // Cargar historial del primer vehículo
         }
     }
 
     private void cargarHistorial() {
+        // Obtener el vehículo seleccionado con casting explícito
         Vehiculo vehiculo = (Vehiculo) cbVehiculo.getSelectedItem();
-        if (vehiculo != null) {
-            List<Servicio> servicios = servicioDAO.listarPorVehiculo(vehiculo.getId());
+        if (vehiculo == null) {
             tableModel.setRowCount(0);
-            for (Servicio s : servicios) {
-                Usuario mecanico = usuarioDAO.obtenerPorId(s.getMecanicoId());
-                tableModel.addRow(new Object[]{
-                    s.getId(), s.getFecha().toString(), s.getTipo(),
-                    s.getDescripcion(), String.format("%.2f", s.getCosto()),
-                    mecanico != null ? mecanico.getNombre() : "N/A"
-                });
-            }
-            
-            if (servicios.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Este vehículo no tiene servicios registrados");
-            }
+            return;
+        }
+        
+        List<Servicio> servicios = servicioDAO.listarPorVehiculo(vehiculo.getId());
+        tableModel.setRowCount(0);
+        
+        for (Servicio s : servicios) {
+            Usuario mecanico = usuarioDAO.obtenerPorId(s.getMecanicoId());
+            tableModel.addRow(new Object[]{
+                s.getId(), 
+                s.getFecha().toString(), 
+                s.getTipo(),
+                s.getDescripcion(), 
+                String.format("%.2f", s.getCosto()),
+                mecanico != null ? mecanico.getNombre() : "N/A"
+            });
+        }
+        
+        if (servicios.isEmpty()) {
+            // Opcional: mostrar un mensaje en la tabla o en un label, pero no un popup molesto
+            // Aquí puedes dejarlo vacío o añadir una fila con un mensaje
         }
     }
 
     private void buscarPorPlaca() {
         String placa = txtBuscarPlaca.getText().trim().toUpperCase();
         if (placa.isEmpty()) {
-            cargarVehiculos();
+            JOptionPane.showMessageDialog(this, "Ingrese una placa para buscar", "Buscar", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         
         Vehiculo vehiculo = vehiculoDAO.buscarPorPlaca(placa);
         if (vehiculo != null) {
+            // Buscar el vehículo en el combo y seleccionarlo
             for (int i = 0; i < cbVehiculo.getItemCount(); i++) {
-                if (cbVehiculo.getItemAt(i).getPlaca().equals(placa)) {
+                Vehiculo v = cbVehiculo.getItemAt(i);
+                if (v.getPlaca().equals(placa)) {
                     cbVehiculo.setSelectedIndex(i);
                     break;
                 }
             }
         } else {
-            JOptionPane.showMessageDialog(this, "No se encontró vehículo con placa: " + placa);
+            JOptionPane.showMessageDialog(this, "No se encontró vehículo con placa: " + placa, "No encontrado", JOptionPane.WARNING_MESSAGE);
         }
     }
 

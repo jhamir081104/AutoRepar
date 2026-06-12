@@ -12,7 +12,8 @@ public class UsuarioForm extends JFrame {
     private UsuarioDAO usuarioDAO;
     private JTable tblUsuarios;
     private DefaultTableModel tableModel;
-    private JTextField txtNombre, txtEmail, txtPassword;
+    private JTextField txtNombre, txtEmail;
+    private JPasswordField txtPassword;  // CAMBIADO a JPasswordField
     private JComboBox<String> cbRol;
     private int selectedId = -1;
     
@@ -114,7 +115,9 @@ public class UsuarioForm extends JFrame {
 
         gbc.gridx = 0; gbc.gridy = 1;
         form.add(new JLabel("Contraseña:"), gbc);
-        txtPassword = new JTextField(20);
+        // CAMBIADO: Ahora es JPasswordField con puntos
+        txtPassword = new JPasswordField(20);
+        txtPassword.setEchoChar('●'); // Carácter que se muestra (punto grueso)
         gbc.gridx = 1;
         form.add(txtPassword, gbc);
 
@@ -214,11 +217,13 @@ public class UsuarioForm extends JFrame {
         int row = tblUsuarios.getSelectedRow();
         if (row >= 0) {
             selectedId = (int) tableModel.getValueAt(row, 0);
+            String nombre = (String) tableModel.getValueAt(row, 1);
+            String email = (String) tableModel.getValueAt(row, 2);
             String rolSeleccionado = (String) tableModel.getValueAt(row, 3);
             
-            txtNombre.setText((String) tableModel.getValueAt(row, 1));
-            txtEmail.setText((String) tableModel.getValueAt(row, 2));
-            txtPassword.setText("");
+            txtNombre.setText(nombre);
+            txtEmail.setText(email);
+            txtPassword.setText("");  // Limpiar campo de contraseña por seguridad
             
             if (usuarioActual.getRol().equals("RECEPCION")) {
                 if (!rolSeleccionado.equals("MECANICO")) {
@@ -245,6 +250,7 @@ public class UsuarioForm extends JFrame {
         if (validarCampos()) {
             String email = txtEmail.getText().trim();
             String rolSeleccionado = (String) cbRol.getSelectedItem();
+            String password = new String(txtPassword.getPassword()); // Obtener contraseña del JPasswordField
             
             if (usuarioActual.getRol().equals("RECEPCION") && !rolSeleccionado.equals("MECANICO")) {
                 JOptionPane.showMessageDialog(this, 
@@ -261,7 +267,7 @@ public class UsuarioForm extends JFrame {
             Usuario usuario = new Usuario();
             usuario.setNombre(txtNombre.getText().trim());
             usuario.setEmail(email);
-            usuario.setPassword(txtPassword.getText().trim());
+            usuario.setPassword(password);
             usuario.setRol(rolSeleccionado);
 
             if (usuarioDAO.insertar(usuario)) {
@@ -290,7 +296,10 @@ public class UsuarioForm extends JFrame {
         String nuevoEmail = txtEmail.getText().trim();
         String emailOriginal = (String) tableModel.getValueAt(tblUsuarios.getSelectedRow(), 2);
         
-        if (!nuevoEmail.equals(emailOriginal) && usuarioDAO.emailExiste(nuevoEmail)) {
+        boolean esMismoEmail = nuevoEmail.equals(emailOriginal);
+        boolean emailExisteEnOtro = !esMismoEmail && usuarioDAO.emailExiste(nuevoEmail);
+        
+        if (emailExisteEnOtro) {
             JOptionPane.showMessageDialog(this, 
                 "El email '" + nuevoEmail + "' ya está registrado por otro usuario",
                 "Error", JOptionPane.ERROR_MESSAGE);
@@ -304,8 +313,10 @@ public class UsuarioForm extends JFrame {
             usuario.setEmail(nuevoEmail);
             usuario.setRol((String) cbRol.getSelectedItem());
             
-            if (!txtPassword.getText().trim().isEmpty()) {
-                usuario.setPassword(txtPassword.getText().trim());
+            // Obtener contraseña del JPasswordField si se ingresó una nueva
+            String nuevaPassword = new String(txtPassword.getPassword());
+            if (!nuevaPassword.isEmpty()) {
+                usuario.setPassword(nuevaPassword);
             }
 
             if (usuarioDAO.actualizar(usuario)) {
@@ -365,9 +376,13 @@ public class UsuarioForm extends JFrame {
             JOptionPane.showMessageDialog(this, "Ingrese el email");
             return false;
         }
-        if (txtPassword.getText().trim().isEmpty() && selectedId == -1) {
-            JOptionPane.showMessageDialog(this, "Ingrese una contraseña para el nuevo usuario");
-            return false;
+        // La contraseña solo es obligatoria para nuevos usuarios
+        if (selectedId == -1) {
+            String password = new String(txtPassword.getPassword());
+            if (password.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Ingrese una contraseña para el nuevo usuario");
+                return false;
+            }
         }
         return true;
     }
@@ -375,7 +390,7 @@ public class UsuarioForm extends JFrame {
     private void limpiarFormulario() {
         txtNombre.setText("");
         txtEmail.setText("");
-        txtPassword.setText("");
+        txtPassword.setText("");  // Limpiar campo de contraseña
         if (usuarioActual.getRol().equals("ADMIN")) {
             cbRol.removeAllItems();
             cbRol.addItem("ADMIN");
