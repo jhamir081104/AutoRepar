@@ -1,27 +1,33 @@
 package com.autorepar.view;
 
-import com.autorepar.controller.UsuarioController;
 import com.autorepar.dao.UsuarioDAO;
 import com.autorepar.model.Usuario;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.util.List;
 
 public class UsuarioForm extends JFrame {
     private Usuario usuarioActual;
-    private UsuarioController usuarioController;
+    private UsuarioDAO usuarioDAO;
     private JTable tblUsuarios;
     private DefaultTableModel tableModel;
-    private JTextField txtNombre, txtEmail, txtPassword;
+    private JTextField txtNombre, txtEmail;
+    private JPasswordField txtPassword;
     private JComboBox<String> cbRol;
     private int selectedId = -1;
     
-    private JButton btnGuardar, btnActualizar, btnEliminar;
+    private JButton btnGuardar, btnActualizar, btnEliminar, btnLimpiar;
+
+    // PALETA DE COLORES (Consistente con Gestión de Vehículos)
+    private final Color AZUL_EJECUTIVO = new Color(16, 44, 87);
+    private final Color GRIS_FONDO = new Color(245, 247, 248);
+    private final Color GRIS_BORDE = new Color(200, 200, 200);
 
     public UsuarioForm(Usuario usuario) {
         this.usuarioActual = usuario;
-        this.usuarioController= new UsuarioController();
+        this.usuarioDAO = new UsuarioDAO();
         initComponents();
         cargarUsuarios();
         aplicarPermisosPorRol();
@@ -29,11 +35,13 @@ public class UsuarioForm extends JFrame {
 
     private void initComponents() {
         setTitle("AutoRepar - Gestión de Usuarios");
-        setSize(1100, 700);
+        setSize(1150, 720);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
+        // Panel principal con el color gris claro de fondo general
+        JPanel mainPanel = new JPanel(new BorderLayout(15, 15));
+        mainPanel.setBackground(GRIS_FONDO);
         mainPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
         JPanel topPanel = crearTopPanel();
@@ -49,20 +57,38 @@ public class UsuarioForm extends JFrame {
     }
 
     private JPanel crearTopPanel() {
-        JPanel top = new JPanel(new BorderLayout());
+        JPanel top = new JPanel(new BorderLayout(15, 10));
+        top.setBackground(AZUL_EJECUTIVO);
+        top.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
         
+        // TÍTULO EN BLANCO
         JLabel lblTitle = new JLabel("Gestión de Usuarios del Sistema");
-        lblTitle.setFont(new Font("Arial", Font.BOLD, 24));
-        lblTitle.setForeground(new Color(0, 102, 204));
+        lblTitle.setFont(new Font("Arial", Font.BOLD, 26));
+        lblTitle.setForeground(Color.WHITE);
         top.add(lblTitle, BorderLayout.WEST);
 
-        JPanel infoPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        // PANEL DE INFORMACIÓN Y RETORNO
+        JPanel infoPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 5));
+        infoPanel.setBackground(AZUL_EJECUTIVO);
+        
         JLabel lblRol = new JLabel("Tu rol: " + usuarioActual.getRol());
-        lblRol.setFont(new Font("Arial", Font.BOLD, 12));
-        lblRol.setForeground(usuarioActual.getRol().equals("ADMIN") ? new Color(0, 150, 0) : new Color(255, 100, 0));
+        lblRol.setFont(new Font("Arial", Font.BOLD, 14));
+        lblRol.setForeground(usuarioActual.getRol().equals("ADMIN") ? new Color(40, 167, 69) : new Color(255, 193, 7));
         infoPanel.add(lblRol);
         
+        // BOTÓN VOLVER ESTILIZADO
         JButton btnVolver = new JButton("← Volver al Dashboard");
+        btnVolver.setFont(new Font("Arial", Font.BOLD, 13));
+        btnVolver.setBackground(Color.WHITE);
+        btnVolver.setForeground(AZUL_EJECUTIVO);
+        btnVolver.setOpaque(true);
+        btnVolver.setContentAreaFilled(true);
+        btnVolver.setFocusPainted(false);
+        btnVolver.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnVolver.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(GRIS_BORDE, 1),
+                BorderFactory.createEmptyBorder(6, 14, 6, 14)
+        ));
         btnVolver.addActionListener(e -> volverDashboard());
         infoPanel.add(btnVolver);
         
@@ -72,6 +98,7 @@ public class UsuarioForm extends JFrame {
 
     private JPanel crearCenterPanel() {
         JPanel center = new JPanel(new BorderLayout());
+        center.setBackground(GRIS_FONDO);
         
         String[] columnas = {"ID", "Nombre", "Email", "Rol"};
         tableModel = new DefaultTableModel(columnas, 0) {
@@ -82,7 +109,20 @@ public class UsuarioForm extends JFrame {
         };
         
         tblUsuarios = new JTable(tableModel);
-        tblUsuarios.setRowHeight(30);
+        tblUsuarios.setRowHeight(32);
+        tblUsuarios.setFont(new Font("Arial", Font.PLAIN, 14));
+        tblUsuarios.setSelectionBackground(new Color(232, 240, 254));
+        tblUsuarios.setSelectionForeground(Color.BLACK);
+        tblUsuarios.setShowGrid(true);
+        tblUsuarios.setGridColor(new Color(230, 230, 230));
+
+        // Personalización de Cabecera de Tabla
+        JTableHeader header = tblUsuarios.getTableHeader();
+        header.setFont(new Font("Arial", Font.BOLD, 14));
+        header.setBackground(Color.WHITE);
+        header.setForeground(AZUL_EJECUTIVO);
+        header.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, AZUL_EJECUTIVO));
+        
         tblUsuarios.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 cargarUsuarioSeleccionado();
@@ -90,47 +130,105 @@ public class UsuarioForm extends JFrame {
         });
         
         JScrollPane scrollPane = new JScrollPane(tblUsuarios);
+        scrollPane.setBorder(BorderFactory.createLineBorder(GRIS_BORDE, 1));
         center.add(scrollPane, BorderLayout.CENTER);
         return center;
     }
 
     private JPanel crearFormPanel() {
+        // Contenedor principal del formulario con fondo oscuro uniforme
         JPanel form = new JPanel(new GridBagLayout());
-        form.setBorder(BorderFactory.createTitledBorder("Registro de Usuario"));
+        form.setBackground(AZUL_EJECUTIVO);
+        
+        var titledBorder = BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(new Color(100, 130, 180), 1), 
+                " Registro de Usuario "
+        );
+        titledBorder.setTitleFont(new Font("Arial", Font.BOLD, 14));
+        titledBorder.setTitleColor(Color.WHITE);
+        form.setBorder(BorderFactory.createCompoundBorder(
+                titledBorder,
+                BorderFactory.createEmptyBorder(15, 25, 15, 25)
+        ));
+
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 10, 5, 10);
+        gbc.insets = new Insets(8, 12, 8, 12);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
+        // Fuentes y colores de etiquetas
+        Font labelFont = new Font("Arial", Font.BOLD, 13);
+        Font inputFont = new Font("Arial", Font.PLAIN, 14);
+
+        // Fila 1: Nombre Completo
         gbc.gridx = 0; gbc.gridy = 0;
-        form.add(new JLabel("Nombre completo:"), gbc);
+        JLabel lblNombre = new JLabel("Nombre completo:");
+        lblNombre.setForeground(Color.WHITE);
+        lblNombre.setFont(labelFont);
+        form.add(lblNombre, gbc);
+        
         txtNombre = new JTextField(20);
+        txtNombre.setFont(inputFont);
         gbc.gridx = 1;
         form.add(txtNombre, gbc);
 
+        // Fila 1: Email
         gbc.gridx = 2;
-        form.add(new JLabel("Email:"), gbc);
+        JLabel lblEmail = new JLabel("Email:");
+        lblEmail.setForeground(Color.WHITE);
+        lblEmail.setFont(labelFont);
+        form.add(lblEmail, gbc);
+        
         txtEmail = new JTextField(20);
+        txtEmail.setFont(inputFont);
         gbc.gridx = 3;
         form.add(txtEmail, gbc);
 
+        // Fila 2: Contraseña
         gbc.gridx = 0; gbc.gridy = 1;
-        form.add(new JLabel("Contraseña:"), gbc);
-        txtPassword = new JTextField(20);
+        JLabel lblPass = new JLabel("Contraseña:");
+        lblPass.setForeground(Color.WHITE);
+        lblPass.setFont(labelFont);
+        form.add(lblPass, gbc);
+        
+        txtPassword = new JPasswordField(20);
+        txtPassword.setEchoChar('●');
+        txtPassword.setFont(inputFont);
         gbc.gridx = 1;
         form.add(txtPassword, gbc);
 
+        // Fila 2: Rol
         gbc.gridx = 2;
-        form.add(new JLabel("Rol:"), gbc);
+        JLabel lblRolLabel = new JLabel("Rol:");
+        lblRolLabel.setForeground(Color.WHITE);
+        lblRolLabel.setFont(labelFont);
+        form.add(lblRolLabel, gbc);
+        
         cbRol = new JComboBox<>();
-        cbRol.setPreferredSize(new Dimension(150, 25));
+        cbRol.setFont(inputFont);
+        cbRol.setPreferredSize(new Dimension(150, 28));
         gbc.gridx = 3;
         form.add(cbRol, gbc);
 
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
-        btnGuardar = new JButton("💾 Guardar");
-        btnActualizar = new JButton("🔄 Actualizar");
-        btnEliminar = new JButton("🗑️ Eliminar");
-        JButton btnLimpiar = new JButton("🧹 Limpiar");
+        // PANEL DE BOTONES ACCIONES
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
+        buttonPanel.setBackground(AZUL_EJECUTIVO);
+        
+        // MODIFICACIÓN: Ajuste de colores para legibilidad óptima
+        btnGuardar = new JButton("Guardar");
+        estilizarBotonFormulario(btnGuardar, Color.GREEN); 
+        btnGuardar.setForeground(AZUL_EJECUTIVO);; // Letras negras sobre fondo verde brillante
+
+        btnActualizar = new JButton("Actualizar");
+        estilizarBotonFormulario(btnActualizar, new Color(51, 153, 255)); // Azul más claro y moderno
+        btnActualizar.setForeground(AZUL_EJECUTIVO); // Letras negras para mejor contraste
+
+        btnEliminar = new JButton("Eliminar");
+        estilizarBotonFormulario(btnEliminar, new Color(204, 0, 0)); // Rojo más oscuro y elegante
+        btnEliminar.setForeground(AZUL_EJECUTIVO); // El texto blanco ahora sí resalta
+
+        btnLimpiar = new JButton("Limpiar");
+        estilizarBotonFormulario(btnLimpiar, Color.WHITE);
+        btnLimpiar.setForeground(AZUL_EJECUTIVO); 
 
         btnGuardar.addActionListener(e -> guardarUsuario());
         btnActualizar.addActionListener(e -> actualizarUsuario());
@@ -142,12 +240,25 @@ public class UsuarioForm extends JFrame {
         buttonPanel.add(btnEliminar);
         buttonPanel.add(btnLimpiar);
 
+        // Agregar panel de botones en la parte inferior del GridBagLayout
         gbc.gridy = 2;
         gbc.gridx = 0;
         gbc.gridwidth = 4;
+        gbc.insets = new Insets(15, 0, 5, 0);
         form.add(buttonPanel, gbc);
 
         return form;
+    }
+
+    // Método asistente para estandarizar el diseño plano moderno en los botones
+    private void estilizarBotonFormulario(JButton boton, Color bg) {
+        boton.setFont(new Font("Arial", Font.BOLD, 14));
+        boton.setBackground(bg);
+        boton.setOpaque(true);
+        boton.setContentAreaFilled(true);
+        boton.setFocusPainted(false);
+        boton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        boton.setBorder(BorderFactory.createEmptyBorder(8, 18, 8, 18));
     }
 
     private void aplicarPermisosPorRol() {
@@ -196,7 +307,7 @@ public class UsuarioForm extends JFrame {
     }
 
     private void cargarUsuarios() {
-        List<Usuario> usuarios = usuarioController.listarTodos();
+        List<Usuario> usuarios = usuarioDAO.listarTodos();
         tableModel.setRowCount(0);
         
         String rolActual = usuarioActual.getRol();
@@ -215,10 +326,12 @@ public class UsuarioForm extends JFrame {
         int row = tblUsuarios.getSelectedRow();
         if (row >= 0) {
             selectedId = (int) tableModel.getValueAt(row, 0);
+            String nombre = (String) tableModel.getValueAt(row, 1);
+            String email = (String) tableModel.getValueAt(row, 2);
             String rolSeleccionado = (String) tableModel.getValueAt(row, 3);
             
-            txtNombre.setText((String) tableModel.getValueAt(row, 1));
-            txtEmail.setText((String) tableModel.getValueAt(row, 2));
+            txtNombre.setText(nombre);
+            txtEmail.setText(email);
             txtPassword.setText("");
             
             if (usuarioActual.getRol().equals("RECEPCION")) {
@@ -246,6 +359,7 @@ public class UsuarioForm extends JFrame {
         if (validarCampos()) {
             String email = txtEmail.getText().trim();
             String rolSeleccionado = (String) cbRol.getSelectedItem();
+            String password = new String(txtPassword.getPassword());
             
             if (usuarioActual.getRol().equals("RECEPCION") && !rolSeleccionado.equals("MECANICO")) {
                 JOptionPane.showMessageDialog(this, 
@@ -254,7 +368,7 @@ public class UsuarioForm extends JFrame {
                 return;
             }
             
-            if (usuarioController.emailExiste(email)) {
+            if (usuarioDAO.emailExiste(email)) {
                 JOptionPane.showMessageDialog(this, "Este email ya está registrado", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
@@ -262,10 +376,10 @@ public class UsuarioForm extends JFrame {
             Usuario usuario = new Usuario();
             usuario.setNombre(txtNombre.getText().trim());
             usuario.setEmail(email);
-            usuario.setPassword(txtPassword.getText().trim());
+            usuario.setPassword(password);
             usuario.setRol(rolSeleccionado);
 
-            if (usuarioController.guardar(usuario)) {
+            if (usuarioDAO.insertar(usuario)) {
                 JOptionPane.showMessageDialog(this, "Usuario creado con éxito. ¡Ya puede iniciar sesión!");
                 limpiarFormulario();
                 cargarUsuarios();
@@ -291,7 +405,10 @@ public class UsuarioForm extends JFrame {
         String nuevoEmail = txtEmail.getText().trim();
         String emailOriginal = (String) tableModel.getValueAt(tblUsuarios.getSelectedRow(), 2);
         
-        if (!nuevoEmail.equals(emailOriginal) && usuarioController.emailExiste(nuevoEmail)) {
+        boolean esMismoEmail = nuevoEmail.equals(emailOriginal);
+        boolean emailExisteEnOtro = !esMismoEmail && usuarioDAO.emailExiste(nuevoEmail);
+        
+        if (emailExisteEnOtro) {
             JOptionPane.showMessageDialog(this, 
                 "El email '" + nuevoEmail + "' ya está registrado por otro usuario",
                 "Error", JOptionPane.ERROR_MESSAGE);
@@ -305,11 +422,12 @@ public class UsuarioForm extends JFrame {
             usuario.setEmail(nuevoEmail);
             usuario.setRol((String) cbRol.getSelectedItem());
             
-            if (!txtPassword.getText().trim().isEmpty()) {
-                usuario.setPassword(txtPassword.getText().trim());
+            String nuevaPassword = new String(txtPassword.getPassword());
+            if (!nuevaPassword.isEmpty()) {
+                usuario.setPassword(nuevaPassword);
             }
 
-            if (usuarioController.actualizar(usuario)) {
+            if (usuarioDAO.actualizar(usuario)) {
                 JOptionPane.showMessageDialog(this, "Usuario actualizado con éxito");
                 limpiarFormulario();
                 cargarUsuarios();
@@ -346,7 +464,7 @@ public class UsuarioForm extends JFrame {
             "Confirmar Eliminación", JOptionPane.YES_NO_OPTION);
             
         if (confirm == JOptionPane.YES_OPTION) {
-            if (usuarioController.eliminar(selectedId)) {
+            if (usuarioDAO.eliminar(selectedId)) {
                 JOptionPane.showMessageDialog(this, "Usuario eliminado");
                 limpiarFormulario();
                 cargarUsuarios();
@@ -366,9 +484,12 @@ public class UsuarioForm extends JFrame {
             JOptionPane.showMessageDialog(this, "Ingrese el email");
             return false;
         }
-        if (txtPassword.getText().trim().isEmpty() && selectedId == -1) {
-            JOptionPane.showMessageDialog(this, "Ingrese una contraseña para el nuevo usuario");
-            return false;
+        if (selectedId == -1) {
+            String password = new String(txtPassword.getPassword());
+            if (password.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Ingrese una contraseña para el nuevo usuario");
+                return false;
+            }
         }
         return true;
     }

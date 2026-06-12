@@ -1,6 +1,5 @@
 package com.autorepar.view;
 
-import com.autorepar.controller.ReportController;
 import com.autorepar.dao.ServicioDAO;
 import com.autorepar.model.Servicio;
 import com.autorepar.model.Usuario;
@@ -25,15 +24,20 @@ import java.util.List;
 
 public class ReporteForm extends JFrame {
     private Usuario usuarioActual;
-    private ReportController reportController;
+    private ServicioDAO servicioDAO;
     private JTable tblReporte;
     private DefaultTableModel tableModel;
     private JTextField txtFechaInicio, txtFechaFin;
     private JLabel lblTotal;
 
+    // Paleta de colores corporativos (Fondo Azul Ejecutivo e interfaces limpias)
+    private final Color AZUL_EJECUTIVO = new Color(18, 38, 68);
+    private final Color GRIS_PLATINO = new Color(242, 244, 247);
+    private final Color GRIS_BORDE = new Color(205, 215, 225);
+
     public ReporteForm(Usuario usuario) {
         this.usuarioActual = usuario;
-        this.reportController = new ReportController();
+        this.servicioDAO = new ServicioDAO();
         initComponents();
         cargarReportePorDefecto();
     }
@@ -44,8 +48,10 @@ public class ReporteForm extends JFrame {
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        // PANEL PRINCIPAL CON FONDO AZUL EJECUTIVO
+        JPanel mainPanel = new JPanel(new BorderLayout(15, 15));
+        mainPanel.setBackground(AZUL_EJECUTIVO);
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         JPanel topPanel = crearTopPanel();
         mainPanel.add(topPanel, BorderLayout.NORTH);
@@ -57,44 +63,85 @@ public class ReporteForm extends JFrame {
     }
 
     private JPanel crearTopPanel() {
-        JPanel top = new JPanel(new BorderLayout(10, 10));
+        JPanel top = new JPanel(new BorderLayout(15, 10));
+        top.setBackground(AZUL_EJECUTIVO);
         
+        // TÍTULO EN BLANCO
         JLabel lblTitle = new JLabel("Reportes de Servicios");
-        lblTitle.setFont(new Font("Arial", Font.BOLD, 24));
-        lblTitle.setForeground(new Color(0, 102, 204));
+        lblTitle.setFont(new Font("Arial", Font.BOLD, 26));
+        lblTitle.setForeground(Color.WHITE);
         top.add(lblTitle, BorderLayout.WEST);
 
-        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
-        filterPanel.setBorder(BorderFactory.createTitledBorder("Filtrar por Rango de Fechas"));
+        // PANEL DE FILTROS Y ACCIONES
+        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 12));
+        filterPanel.setBackground(AZUL_EJECUTIVO);
         
-        filterPanel.add(new JLabel("Fecha Inicio:"));
-        txtFechaInicio = new JTextField(LocalDate.now().withDayOfMonth(1).toString(), 12);
+        // TitledBorder adaptado con letras blancas
+        var titledBorder = BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(GRIS_BORDE, 1), 
+                "Filtrar por Rango de Fechas"
+        );
+        titledBorder.setTitleFont(new Font("Arial", Font.BOLD, 12));
+        titledBorder.setTitleColor(Color.WHITE);
+        filterPanel.setBorder(titledBorder);
+        
+        JLabel lblInicio = new JLabel("Fecha Inicio:");
+        lblInicio.setForeground(Color.WHITE);
+        lblInicio.setFont(new Font("Arial", Font.BOLD, 12));
+        filterPanel.add(lblInicio);
+        
+        txtFechaInicio = new JTextField(LocalDate.now().withDayOfMonth(1).toString(), 10);
+        txtFechaInicio.setFont(new Font("Arial", Font.PLAIN, 13));
         filterPanel.add(txtFechaInicio);
         
-        filterPanel.add(new JLabel("Fecha Fin:"));
-        txtFechaFin = new JTextField(LocalDate.now().toString(), 12);
+        JLabel lblFin = new JLabel("Fecha Fin:");
+        lblFin.setForeground(Color.WHITE);
+        lblFin.setFont(new Font("Arial", Font.BOLD, 12));
+        filterPanel.add(lblFin);
+        
+        txtFechaFin = new JTextField(LocalDate.now().toString(), 10);
+        txtFechaFin.setFont(new Font("Arial", Font.PLAIN, 13));
         filterPanel.add(txtFechaFin);
         
-        JButton btnBuscar = new JButton("🔍 Buscar");
-        btnBuscar.setFont(new Font("Arial", Font.BOLD, 14));
-        btnBuscar.setBackground(new Color(0, 150, 0));
-        btnBuscar.setForeground(Color.BLACK);
+        // BOTÓN BUSCAR - FONDO VERDE CON LETRAS BLANCAS PARA ALTO CONTRASTE
+        JButton btnBuscar = new JButton("Buscar");
+        btnBuscar.setFont(new Font("Arial", Font.BOLD, 13));
+        btnBuscar.setBackground(new Color(40, 167, 69)); // Verde profesional
+        btnBuscar.setForeground(Color.GREEN);
         btnBuscar.setFocusPainted(false);
         btnBuscar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnBuscar.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(32, 134, 55), 1),
+                BorderFactory.createEmptyBorder(6, 14, 6, 14)
+        ));
         btnBuscar.addActionListener(e -> generarReporte());
         filterPanel.add(btnBuscar);
         
-        JButton btnGenerarPDF = new JButton("📄 Generar PDF");
-        btnGenerarPDF.setFont(new Font("Arial", Font.BOLD, 14));
-        btnGenerarPDF.setBackground(new Color(200, 0, 0));
-        btnGenerarPDF.setForeground(Color.BLACK);
+        // BOTÓN GENERAR PDF - FONDO ROJO CON LETRAS BLANCAS PARA ALTO CONTRASTE
+        JButton btnGenerarPDF = new JButton("Generar PDF");
+        btnGenerarPDF.setFont(new Font("Arial", Font.BOLD, 13));
+        btnGenerarPDF.setBackground(new Color(220, 53, 69)); // Rojo plano corporativo
+        btnGenerarPDF.setForeground(Color.RED);
         btnGenerarPDF.setFocusPainted(false);
         btnGenerarPDF.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnGenerarPDF.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(185, 39, 53), 1),
+                BorderFactory.createEmptyBorder(6, 14, 6, 14)
+        ));
         btnGenerarPDF.addActionListener(e -> generarPDF());
         filterPanel.add(btnGenerarPDF);
         
+        // BOTÓN VOLVER - ESTILO LIMPIO EN BLANCO
         JButton btnVolver = new JButton("← Volver al Dashboard");
-        btnVolver.setFont(new Font("Arial", Font.PLAIN, 12));
+        btnVolver.setFont(new Font("Arial", Font.BOLD, 12));
+        btnVolver.setBackground(Color.WHITE);
+        btnVolver.setForeground(AZUL_EJECUTIVO);
+        btnVolver.setFocusPainted(false);
+        btnVolver.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnVolver.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(GRIS_BORDE, 1),
+                BorderFactory.createEmptyBorder(6, 12, 6, 12)
+        ));
         btnVolver.addActionListener(e -> volverDashboard());
         filterPanel.add(btnVolver);
         
@@ -104,6 +151,7 @@ public class ReporteForm extends JFrame {
 
     private JPanel crearCenterPanel() {
         JPanel center = new JPanel(new BorderLayout(10, 10));
+        center.setBackground(AZUL_EJECUTIVO);
         
         String[] columnas = {"ID", "Fecha", "Tipo de Servicio", "Descripción", "Costo (S/)", "ID Vehículo"};
         tableModel = new DefaultTableModel(columnas, 0) {
@@ -114,19 +162,37 @@ public class ReporteForm extends JFrame {
         };
         
         tblReporte = new JTable(tableModel);
-        tblReporte.setRowHeight(30);
-        tblReporte.getTableHeader().setFont(new Font("Arial", Font.BOLD, 12));
+        tblReporte.setRowHeight(35);
+        tblReporte.setFont(new Font("Arial", Font.PLAIN, 13));
+        
+        // Estilo de la Cabecera de la Tabla
+        tblReporte.getTableHeader().setOpaque(true);
+        tblReporte.getTableHeader().setFont(new Font("Arial", Font.BOLD, 13));
+        tblReporte.getTableHeader().setBackground(GRIS_PLATINO);
+        tblReporte.getTableHeader().setForeground(AZUL_EJECUTIVO);
+        tblReporte.getTableHeader().setReorderingAllowed(false);
+        
+        // Grilla interna
+        tblReporte.setShowGrid(true);
+        tblReporte.setGridColor(GRIS_BORDE);
+        tblReporte.setSelectionBackground(new Color(18, 38, 68, 40));
+        tblReporte.setSelectionForeground(Color.BLACK);
         
         JScrollPane scrollPane = new JScrollPane(tblReporte);
+        scrollPane.setBorder(BorderFactory.createLineBorder(Color.WHITE, 1));
+        scrollPane.getViewport().setBackground(Color.WHITE);
         center.add(scrollPane, BorderLayout.CENTER);
         
-        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        lblTotal = new JLabel("Total: S/ 0.00");
-        lblTotal.setFont(new Font("Arial", Font.BOLD, 16));
-        lblTotal.setForeground(new Color(0, 102, 204));
-        bottomPanel.add(lblTotal);
-        center.add(bottomPanel, BorderLayout.SOUTH);
+        // Panel Inferior para el Total
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 10));
+        bottomPanel.setBackground(AZUL_EJECUTIVO);
         
+        lblTotal = new JLabel("Total de ingresos: S/ 0.00");
+        lblTotal.setFont(new Font("Arial", Font.BOLD, 18));
+        lblTotal.setForeground(Color.WHITE); // Cambiado a Blanco para resaltar sobre el fondo azul
+        bottomPanel.add(lblTotal);
+        
+        center.add(bottomPanel, BorderLayout.SOUTH);
         return center;
     }
 
@@ -148,8 +214,8 @@ public class ReporteForm extends JFrame {
                 return;
             }
             
-            List<Servicio> servicios = reportController.obtenerServiciosPorRango(inicio, fin);
-            double total = reportController.obtenerTotalPorRango(inicio, fin);
+            List<Servicio> servicios = servicioDAO.listarPorRangoFechas(inicio, fin);
+            double total = servicioDAO.obtenerTotalServiciosPorRango(inicio, fin);
             
             tableModel.setRowCount(0);
             for (Servicio s : servicios) {
@@ -200,7 +266,6 @@ public class ReporteForm extends JFrame {
             PdfDocument pdfDoc = new PdfDocument(writer);
             Document document = new Document(pdfDoc);
             
-            // Título
             Paragraph titulo = new Paragraph("REPORTE DE SERVICIOS")
                     .setFontSize(20)
                     .setBold()
@@ -208,7 +273,6 @@ public class ReporteForm extends JFrame {
                     .setMarginBottom(10);
             document.add(titulo);
             
-            // Subtítulo con fechas
             String fechaInicio = txtFechaInicio.getText().trim();
             String fechaFin = txtFechaFin.getText().trim();
             Paragraph subtitulo = new Paragraph("Período: " + fechaInicio + " al " + fechaFin)
@@ -217,18 +281,15 @@ public class ReporteForm extends JFrame {
                     .setMarginBottom(20);
             document.add(subtitulo);
             
-            // CORREGIDO: Usar LocalDateTime en lugar de LocalDate
             Paragraph fechaGen = new Paragraph("Generado: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")))
                     .setFontSize(10)
                     .setTextAlignment(TextAlignment.RIGHT)
                     .setMarginBottom(20);
             document.add(fechaGen);
             
-            // Crear tabla
             Table tabla = new Table(UnitValue.createPercentArray(new float[]{5, 10, 20, 25, 10, 10}));
             tabla.setWidth(UnitValue.createPercentValue(100));
             
-            // Encabezados
             String[] headers = {"ID", "Fecha", "Tipo", "Descripción", "Costo (S/)", "Vehículo ID"};
             for (String header : headers) {
                 Cell celda = new Cell().add(new Paragraph(header).setBold());
@@ -237,7 +298,6 @@ public class ReporteForm extends JFrame {
                 tabla.addCell(celda);
             }
             
-            // Datos
             double totalGeneral = 0;
             for (int i = 0; i < rowCount; i++) {
                 String id = String.valueOf(tableModel.getValueAt(i, 0));
@@ -263,7 +323,6 @@ public class ReporteForm extends JFrame {
             
             document.add(tabla);
             
-            // Total
             Paragraph total = new Paragraph("TOTAL GENERAL: S/ " + String.format("%.2f", totalGeneral))
                     .setFontSize(14)
                     .setBold()
@@ -271,7 +330,6 @@ public class ReporteForm extends JFrame {
                     .setMarginTop(20);
             document.add(total);
             
-            // Pie de página
             Paragraph footer = new Paragraph("AutoRepar - Sistema de Gestión de Citas y Servicios")
                     .setFontSize(9)
                     .setTextAlignment(TextAlignment.CENTER)
