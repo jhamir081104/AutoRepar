@@ -3,10 +3,22 @@ package com.autorepar.view;
 import com.autorepar.dao.ServicioDAO;
 import com.autorepar.model.Servicio;
 import com.autorepar.model.Usuario;
+import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.UnitValue;
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.io.File;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -62,13 +74,26 @@ public class ReporteForm extends JFrame {
         txtFechaFin = new JTextField(LocalDate.now().toString(), 12);
         filterPanel.add(txtFechaFin);
         
-        JButton btnGenerar = new JButton("📊 Generar Reporte");
-        btnGenerar.setBackground(new Color(0, 102, 204));
-        btnGenerar.setForeground(Color.WHITE);
-        btnGenerar.addActionListener(e -> generarReporte());
-        filterPanel.add(btnGenerar);
+        JButton btnBuscar = new JButton("🔍 Buscar");
+        btnBuscar.setFont(new Font("Arial", Font.BOLD, 14));
+        btnBuscar.setBackground(new Color(0, 150, 0));
+        btnBuscar.setForeground(Color.BLACK);
+        btnBuscar.setFocusPainted(false);
+        btnBuscar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnBuscar.addActionListener(e -> generarReporte());
+        filterPanel.add(btnBuscar);
+        
+        JButton btnGenerarPDF = new JButton("📄 Generar PDF");
+        btnGenerarPDF.setFont(new Font("Arial", Font.BOLD, 14));
+        btnGenerarPDF.setBackground(new Color(200, 0, 0));
+        btnGenerarPDF.setForeground(Color.BLACK);
+        btnGenerarPDF.setFocusPainted(false);
+        btnGenerarPDF.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnGenerarPDF.addActionListener(e -> generarPDF());
+        filterPanel.add(btnGenerarPDF);
         
         JButton btnVolver = new JButton("← Volver al Dashboard");
+        btnVolver.setFont(new Font("Arial", Font.PLAIN, 12));
         btnVolver.addActionListener(e -> volverDashboard());
         filterPanel.add(btnVolver);
         
@@ -142,6 +167,134 @@ public class ReporteForm extends JFrame {
             
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Formato de fecha incorrecto. Use YYYY-MM-DD");
+        }
+    }
+
+    private void generarPDF() {
+        int rowCount = tableModel.getRowCount();
+        if (rowCount == 0) {
+            JOptionPane.showMessageDialog(this, 
+                "No hay datos para generar el PDF.\nPrimero realice una búsqueda.", 
+                "Sin datos", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Guardar Reporte PDF");
+        fileChooser.setSelectedFile(new File("reporte_servicios_" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".pdf"));
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Archivos PDF (*.pdf)", "pdf"));
+        
+        int result = fileChooser.showSaveDialog(this);
+        if (result != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+        
+        File archivo = fileChooser.getSelectedFile();
+        if (!archivo.getName().toLowerCase().endsWith(".pdf")) {
+            archivo = new File(archivo.getAbsolutePath() + ".pdf");
+        }
+        
+        try {
+            PdfWriter writer = new PdfWriter(archivo);
+            PdfDocument pdfDoc = new PdfDocument(writer);
+            Document document = new Document(pdfDoc);
+            
+            // Título
+            Paragraph titulo = new Paragraph("REPORTE DE SERVICIOS")
+                    .setFontSize(20)
+                    .setBold()
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginBottom(10);
+            document.add(titulo);
+            
+            // Subtítulo con fechas
+            String fechaInicio = txtFechaInicio.getText().trim();
+            String fechaFin = txtFechaFin.getText().trim();
+            Paragraph subtitulo = new Paragraph("Período: " + fechaInicio + " al " + fechaFin)
+                    .setFontSize(12)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginBottom(20);
+            document.add(subtitulo);
+            
+            // CORREGIDO: Usar LocalDateTime en lugar de LocalDate
+            Paragraph fechaGen = new Paragraph("Generado: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")))
+                    .setFontSize(10)
+                    .setTextAlignment(TextAlignment.RIGHT)
+                    .setMarginBottom(20);
+            document.add(fechaGen);
+            
+            // Crear tabla
+            Table tabla = new Table(UnitValue.createPercentArray(new float[]{5, 10, 20, 25, 10, 10}));
+            tabla.setWidth(UnitValue.createPercentValue(100));
+            
+            // Encabezados
+            String[] headers = {"ID", "Fecha", "Tipo", "Descripción", "Costo (S/)", "Vehículo ID"};
+            for (String header : headers) {
+                Cell celda = new Cell().add(new Paragraph(header).setBold());
+                celda.setBackgroundColor(ColorConstants.LIGHT_GRAY);
+                celda.setTextAlignment(TextAlignment.CENTER);
+                tabla.addCell(celda);
+            }
+            
+            // Datos
+            double totalGeneral = 0;
+            for (int i = 0; i < rowCount; i++) {
+                String id = String.valueOf(tableModel.getValueAt(i, 0));
+                String fecha = (String) tableModel.getValueAt(i, 1);
+                String tipo = (String) tableModel.getValueAt(i, 2);
+                String descripcion = (String) tableModel.getValueAt(i, 3);
+                String costo = (String) tableModel.getValueAt(i, 4);
+                String vehiculoId = String.valueOf(tableModel.getValueAt(i, 5));
+                
+                tabla.addCell(new Cell().add(new Paragraph(id)).setTextAlignment(TextAlignment.CENTER));
+                tabla.addCell(new Cell().add(new Paragraph(fecha)).setTextAlignment(TextAlignment.CENTER));
+                tabla.addCell(new Cell().add(new Paragraph(tipo)));
+                tabla.addCell(new Cell().add(new Paragraph(descripcion)));
+                tabla.addCell(new Cell().add(new Paragraph(costo)).setTextAlignment(TextAlignment.RIGHT));
+                tabla.addCell(new Cell().add(new Paragraph(vehiculoId)).setTextAlignment(TextAlignment.CENTER));
+                
+                try {
+                    totalGeneral += Double.parseDouble(costo.replace(",", "."));
+                } catch (NumberFormatException e) {
+                    // Ignorar
+                }
+            }
+            
+            document.add(tabla);
+            
+            // Total
+            Paragraph total = new Paragraph("TOTAL GENERAL: S/ " + String.format("%.2f", totalGeneral))
+                    .setFontSize(14)
+                    .setBold()
+                    .setTextAlignment(TextAlignment.RIGHT)
+                    .setMarginTop(20);
+            document.add(total);
+            
+            // Pie de página
+            Paragraph footer = new Paragraph("AutoRepar - Sistema de Gestión de Citas y Servicios")
+                    .setFontSize(9)
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setMarginTop(30);
+            document.add(footer);
+            
+            document.close();
+            
+            JOptionPane.showMessageDialog(this, 
+                "✅ PDF generado exitosamente!\n" +
+                "Archivo guardado en:\n" + archivo.getAbsolutePath(),
+                "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            
+            try {
+                Desktop.getDesktop().open(archivo);
+            } catch (Exception ex) {
+                // No se pudo abrir automáticamente
+            }
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, 
+                "Error al generar el PDF:\n" + e.getMessage(),
+                "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 

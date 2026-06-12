@@ -21,7 +21,6 @@ public class Vehiculo {
         this.clienteId = clienteId;
     }
 
-    // Getters y Setters
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
     public String getPlaca() { return placa; }
@@ -38,6 +37,11 @@ public class Vehiculo {
     public void setClienteId(int clienteId) { this.clienteId = clienteId; }
 
     public String getDescripcion() {
-        return marca + " " + modelo + " (" + placa + ")";
+        return marca + " " + modelo + " (" + placa + ") - " + anio;
+    }
+    
+    @Override
+    public String toString() {
+        return getDescripcion();
     }
 }

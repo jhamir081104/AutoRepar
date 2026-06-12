@@ -1,5 +1,6 @@
 package com.autorepar.dao;
 
+import com.autorepar.conexion.Conexion;
 import com.autorepar.model.Usuario;
 import java.sql.*;
 import java.util.ArrayList;
@@ -12,7 +13,7 @@ public class UsuarioDAO {
     public Usuario login(String email, String password) {
         String sql = "SELECT * FROM Usuario WHERE email = ? AND password = ?";
         
-        try (Connection conn = DBConnection.getConnection();
+        try (Connection conn = Conexion.getConexion();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             
             ps.setString(1, email);
@@ -38,7 +39,7 @@ public class UsuarioDAO {
         List<Usuario> mecanicos = new ArrayList<>();
         String sql = "SELECT * FROM Usuario WHERE rol = 'MECANICO'";
         
-        try (Connection conn = DBConnection.getConnection();
+        try (Connection conn = Conexion.getConexion();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             
@@ -59,7 +60,7 @@ public class UsuarioDAO {
     public Usuario obtenerPorId(int id) {
         String sql = "SELECT * FROM Usuario WHERE id_usuario = ?";
         
-        try (Connection conn = DBConnection.getConnection();
+        try (Connection conn = Conexion.getConexion();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             
             ps.setInt(1, id);
@@ -84,7 +85,7 @@ public class UsuarioDAO {
     public boolean insertar(Usuario usuario) {
         String sql = "INSERT INTO Usuario (nombre, email, password, rol) VALUES (?, ?, ?, ?)";
         
-        try (Connection conn = DBConnection.getConnection();
+        try (Connection conn = Conexion.getConexion();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             
             ps.setString(1, usuario.getNombre());
@@ -110,7 +111,7 @@ public class UsuarioDAO {
         String sql;
         PreparedStatement ps = null;
         
-        try (Connection conn = DBConnection.getConnection()) {
+        try (Connection conn = Conexion.getConexion()) {
             // Verificar si el email ya existe en OTRO usuario (no el mismo)
             if (emailExisteEnOtroUsuario(usuario.getEmail(), usuario.getId())) {
                 System.out.println("❌ El email " + usuario.getEmail() + " ya está usado por otro usuario");
@@ -150,7 +151,7 @@ public class UsuarioDAO {
     private boolean emailExisteEnOtroUsuario(String email, int idUsuarioActual) {
         String sql = "SELECT COUNT(*) FROM Usuario WHERE email = ? AND id_usuario != ?";
         
-        try (Connection conn = DBConnection.getConnection();
+        try (Connection conn = Conexion.getConexion();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             
             ps.setString(1, email);
@@ -168,7 +169,7 @@ public class UsuarioDAO {
     public boolean eliminar(int id) {
         String sql = "DELETE FROM Usuario WHERE id_usuario=?";
         
-        try (Connection conn = DBConnection.getConnection();
+        try (Connection conn = Conexion.getConexion();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             
             ps.setInt(1, id);
@@ -183,7 +184,7 @@ public class UsuarioDAO {
         List<Usuario> usuarios = new ArrayList<>();
         String sql = "SELECT * FROM Usuario ORDER BY id_usuario";
         
-        try (Connection conn = DBConnection.getConnection();
+        try (Connection conn = Conexion.getConexion();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             
@@ -205,7 +206,7 @@ public class UsuarioDAO {
     public boolean emailExiste(String email) {
         String sql = "SELECT COUNT(*) FROM Usuario WHERE email = ?";
         
-        try (Connection conn = DBConnection.getConnection();
+        try (Connection conn = Conexion.getConexion();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             
             ps.setString(1, email);
