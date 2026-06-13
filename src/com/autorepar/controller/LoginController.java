@@ -4,6 +4,7 @@ import com.autorepar.dao.UsuarioDAO;
 import com.autorepar.model.Usuario;
 import com.autorepar.view.DashboardForm;
 import com.autorepar.view.LoginForm;
+import com.google.common.base.Strings;
 
 import javax.swing.*;
 
@@ -26,9 +27,9 @@ public class LoginController {
         String password = new String(
                 view.getTxtPassword().getPassword()
         );
-
-        if (email.isEmpty() || password.isEmpty()) {
-
+        
+        //validacion con Guava
+        if (Strings.isNullOrEmpty(email) || Strings.isNullOrEmpty(password)) {
             JOptionPane.showMessageDialog(
                     view,
                     "Por favor complete todos los campos",
@@ -36,6 +37,12 @@ public class LoginController {
                     JOptionPane.WARNING_MESSAGE
             );
 
+            return;
+        }
+        
+        //validacion basica de formato email
+        if(!email.contains("@")){
+            JOptionPane.showMessageDialog(view, "ingrese un email valido", "Email invalido", JOptionPane.ERROR_MESSAGE);
             return;
         }
 

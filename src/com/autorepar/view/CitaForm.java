@@ -7,12 +7,19 @@ import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class CitaForm extends JFrame {
+
     private Usuario usuarioActual;
     private CitaDAO citaDAO;
     private ClienteDAO clienteDAO;
@@ -84,7 +91,7 @@ public class CitaForm extends JFrame {
         top.setBackground(AZUL_EJECUTIVO);
         // Relleno interno para que se vea robusto y espacioso de forma simétrica
         top.setBorder(BorderFactory.createEmptyBorder(20, 25, 20, 25));
-        
+
         JLabel lblTitle = new JLabel("Gestión de Citas");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 26)); // Cambiado a Segoe UI para alineación ejecutiva
         lblTitle.setForeground(Color.WHITE); // Texto Blanco solicitado
@@ -102,14 +109,14 @@ public class CitaForm extends JFrame {
         ));
         btnVolver.addActionListener(e -> volverDashboard());
         top.add(btnVolver, BorderLayout.EAST);
-        
+
         return top;
     }
 
     private JPanel crearCenterPanel() {
         JPanel center = new JPanel(new BorderLayout());
         center.setBackground(GRIS_PLATINO);
-        
+
         // Panel superior con checkbox adaptado al fondo Gris Platino
         JPanel topCenter = new JPanel(new FlowLayout(FlowLayout.LEFT));
         topCenter.setBackground(GRIS_PLATINO);
@@ -120,7 +127,7 @@ public class CitaForm extends JFrame {
         chkMostrarPagadas.addActionListener(e -> cargarCitas());
         topCenter.add(chkMostrarPagadas);
         center.add(topCenter, BorderLayout.NORTH);
-        
+
         // Tabla
         String[] columnas = {"ID", "Fecha", "Hora", "Cliente", "Vehículo", "Mecánico", "Estado", "Descripción"};
         tableModel = new DefaultTableModel(columnas, 0) {
@@ -129,17 +136,17 @@ public class CitaForm extends JFrame {
                 return false;
             }
         };
-        
+
         tblCitas = new JTable(tableModel);
         tblCitas.setRowHeight(35); // Altura de fila más espaciosa y moderna
-        
+
         // CORREGIDO: Cabecera con fondo Azul Ejecutivo y Letras Blancas legibles
         tblCitas.getTableHeader().setOpaque(true);
         tblCitas.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
         tblCitas.getTableHeader().setBackground(AZUL_EJECUTIVO);
         tblCitas.getTableHeader().setForeground(AZUL_EJECUTIVO); // Cambiado de DARK_GRAY a WHITE para contraste
         tblCitas.getTableHeader().setReorderingAllowed(false);
-        
+
         // Estilos de grillas
         tblCitas.setShowGrid(true);
         tblCitas.setGridColor(GRIS_BORDE);
@@ -151,33 +158,33 @@ public class CitaForm extends JFrame {
                 cargarCitaSeleccionada();
             }
         });
-        
+
         JScrollPane scrollPane = new JScrollPane(tblCitas);
         scrollPane.setBorder(BorderFactory.createLineBorder(AZUL_EJECUTIVO, 1));
         scrollPane.getViewport().setBackground(Color.WHITE);
-        
+
         center.add(scrollPane, BorderLayout.CENTER);
         return center;
     }
 
     private JPanel crearFormPanel() {
         JPanel form = new JPanel(new GridBagLayout());
-        
+
         // Fondo Azul Ejecutivo para la sección de programación de citas
         form.setBackground(AZUL_EJECUTIVO);
-        
+
         // Borde elegante con títulos y líneas blancas
         Border lineaBlanca = BorderFactory.createLineBorder(Color.WHITE, 1);
         TitledBorder tituloBorde = BorderFactory.createTitledBorder(
-                lineaBlanca, 
-                "Programar Cita", 
-                TitledBorder.LEFT, 
-                TitledBorder.TOP, 
-                new Font("Arial", Font.BOLD, 13), 
+                lineaBlanca,
+                "Programar Cita",
+                TitledBorder.LEFT,
+                TitledBorder.TOP,
+                new Font("Arial", Font.BOLD, 13),
                 Color.WHITE
         );
         form.setBorder(tituloBorde);
-        
+
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(8, 12, 8, 12);
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -187,7 +194,8 @@ public class CitaForm extends JFrame {
         Color labelColor = Color.WHITE;
 
         // Fila 0: Cliente y Vehículo
-        gbc.gridx = 0; gbc.gridy = 0;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
         JLabel lblCliente = new JLabel("Cliente:");
         lblCliente.setFont(labelFont);
         lblCliente.setForeground(labelColor);
@@ -211,7 +219,8 @@ public class CitaForm extends JFrame {
         form.add(cbVehiculo, gbc);
 
         // Fila 1: Mecánico y Fecha
-        gbc.gridx = 0; gbc.gridy = 1;
+        gbc.gridx = 0;
+        gbc.gridy = 1;
         JLabel lblMecanico = new JLabel("Mecánico:");
         lblMecanico.setFont(labelFont);
         lblMecanico.setForeground(labelColor);
@@ -233,7 +242,8 @@ public class CitaForm extends JFrame {
         form.add(txtFecha, gbc);
 
         // Fila 2: Hora y Estado
-        gbc.gridx = 0; gbc.gridy = 2;
+        gbc.gridx = 0;
+        gbc.gridy = 2;
         JLabel lblHora = new JLabel("Hora (HH:MM):");
         lblHora.setFont(labelFont);
         lblHora.setForeground(labelColor);
@@ -255,7 +265,8 @@ public class CitaForm extends JFrame {
         form.add(cbEstado, gbc);
 
         // Fila 3: Descripción
-        gbc.gridx = 0; gbc.gridy = 3;
+        gbc.gridx = 0;
+        gbc.gridy = 3;
         JLabel lblDescripcion = new JLabel("Descripción:");
         lblDescripcion.setFont(labelFont);
         lblDescripcion.setForeground(labelColor);
@@ -273,8 +284,8 @@ public class CitaForm extends JFrame {
 
         // Panel de Botones con diseño ejecutivo interactivo
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
-        buttonPanel.setOpaque(false); 
-        
+        buttonPanel.setOpaque(false);
+
         JButton btnGuardar = new JButton("Guardar");
         JButton btnActualizar = new JButton(" Actualizar");
         JButton btnPagarCita = new JButton(" Pagar Cita");
@@ -337,11 +348,12 @@ public class CitaForm extends JFrame {
             btn.setContentAreaFilled(true);
             btn.setFocusPainted(false);
             btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            
+
             btn.addMouseListener(new java.awt.event.MouseAdapter() {
                 public void mouseEntered(java.awt.event.MouseEvent evt) {
                     btn.setBackground(new Color(245, 248, 255)); // Iluminación sutil al hacer hover
                 }
+
                 public void mouseExited(java.awt.event.MouseEvent evt) {
                     btn.setBackground(Color.WHITE);
                 }
@@ -370,17 +382,17 @@ public class CitaForm extends JFrame {
         for (Cliente c : clientes) {
             cbCliente.addItem(c);
         }
-        
+
         List<Usuario> mecanicos = usuarioDAO.listarMecanicos();
         cbMecanico.removeAllItems();
         for (Usuario u : mecanicos) {
             cbMecanico.addItem(u);
         }
-        
+
         if (mecanicos.isEmpty()) {
-            JOptionPane.showMessageDialog(this, 
-                "⚠️ No hay mecánicos registrados.\nDebe crear usuarios con rol MECANICO en el módulo de Usuarios.",
-                "Advertencia", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                    "⚠️ No hay mecánicos registrados.\nDebe crear usuarios con rol MECANICO en el módulo de Usuarios.",
+                    "Advertencia", JOptionPane.WARNING_MESSAGE);
         }
     }
 
@@ -392,11 +404,11 @@ public class CitaForm extends JFrame {
             for (Vehiculo v : vehiculos) {
                 cbVehiculo.addItem(v);
             }
-            
+
             if (vehiculos.isEmpty()) {
-                JOptionPane.showMessageDialog(this, 
-                    "Este cliente no tiene vehículos registrados.\nDebe registrar un vehículo primero.",
-                    "Advertencia", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                        "Este cliente no tiene vehículos registrados.\nDebe registrar un vehículo primero.",
+                        "Advertencia", JOptionPane.WARNING_MESSAGE);
             }
         }
     }
@@ -404,7 +416,7 @@ public class CitaForm extends JFrame {
     private void cargarCitas() {
         List<Cita> todas = citaDAO.listarTodas();
         List<Cita> citasAMostrar = new ArrayList<>();
-        
+
         for (Cita c : todas) {
             if (chkMostrarPagadas.isSelected()) {
                 citasAMostrar.add(c);
@@ -414,21 +426,21 @@ public class CitaForm extends JFrame {
                 }
             }
         }
-        
+
         tableModel.setRowCount(0);
         for (Cita c : citasAMostrar) {
             Cliente cliente = clienteDAO.obtenerPorId(c.getClienteId());
             Vehiculo vehiculo = vehiculoDAO.obtenerPorId(c.getVehiculoId());
             Usuario mecanico = usuarioDAO.obtenerPorId(c.getMecanicoId());
-            
+
             String estadoMostrar = c.getEstado();
             if (estadoMostrar.equals("CANCELADA")) {
                 estadoMostrar = "PAGADA";
             }
-            
+
             tableModel.addRow(new Object[]{
-                c.getId(), 
-                c.getFecha().toString(), 
+                c.getId(),
+                c.getFecha().toString(),
                 c.getHora().toString(),
                 cliente != null ? cliente.getNombreCompleto() : "N/A",
                 vehiculo != null ? vehiculo.getDescripcion() : "N/A",
@@ -452,7 +464,7 @@ public class CitaForm extends JFrame {
             txtFecha.setText(fechaStr);
             txtHora.setText(horaStr);
             txtDescripcion.setText(descripcion);
-            
+
             if (estado.equals("PAGADA")) {
                 cbEstado.setSelectedItem("COMPLETADA");
                 cbEstado.setEnabled(false);
@@ -488,12 +500,12 @@ public class CitaForm extends JFrame {
             Cliente cliente = (Cliente) cbCliente.getSelectedItem();
             Vehiculo vehiculo = (Vehiculo) cbVehiculo.getSelectedItem();
             Usuario mecanico = (Usuario) cbMecanico.getSelectedItem();
-            
+
             if (cliente == null || vehiculo == null || mecanico == null) {
                 JOptionPane.showMessageDialog(this, "Complete todos los campos", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            
+
             Cita cita = new Cita();
             cita.setFecha(LocalDate.parse(txtFecha.getText().trim()));
             cita.setHora(LocalTime.parse(txtHora.getText().trim()));
@@ -522,18 +534,18 @@ public class CitaForm extends JFrame {
             JOptionPane.showMessageDialog(this, "Seleccione una cita para actualizar");
             return;
         }
-        
+
         String estadoActual = (String) tableModel.getValueAt(tblCitas.getSelectedRow(), 6);
         if (estadoActual.equals("PAGADA")) {
             JOptionPane.showMessageDialog(this, "No se puede modificar una cita ya pagada", "Advertencia", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        
+
         if (validarCampos()) {
             Cliente cliente = (Cliente) cbCliente.getSelectedItem();
             Vehiculo vehiculo = (Vehiculo) cbVehiculo.getSelectedItem();
             Usuario mecanico = (Usuario) cbMecanico.getSelectedItem();
-            
+
             Cita cita = new Cita();
             cita.setId(selectedId);
             cita.setFecha(LocalDate.parse(txtFecha.getText().trim()));
@@ -559,22 +571,22 @@ public class CitaForm extends JFrame {
             JOptionPane.showMessageDialog(this, "Seleccione una cita para eliminar");
             return;
         }
-        
+
         String estadoActual = (String) tableModel.getValueAt(tblCitas.getSelectedRow(), 6);
-        
-        int confirm = JOptionPane.showConfirmDialog(this, 
-            "⚠️ ELIMINAR CITA PERMANENTEMENTE\n\n" +
-            "ID: " + selectedId + "\n" +
-            "Cliente: " + tableModel.getValueAt(tblCitas.getSelectedRow(), 3) + "\n" +
-            "Fecha: " + txtFecha.getText() + "\n" +
-            "Hora: " + txtHora.getText() + "\n" +
-            "Estado: " + estadoActual + "\n\n" +
-            "Esta acción eliminará la cita de la base de datos.\n" +
-            "¿Está seguro?",
-            "Confirmar Eliminación", 
-            JOptionPane.YES_NO_OPTION, 
-            JOptionPane.WARNING_MESSAGE);
-            
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "⚠️ ELIMINAR CITA PERMANENTEMENTE\n\n"
+                + "ID: " + selectedId + "\n"
+                + "Cliente: " + tableModel.getValueAt(tblCitas.getSelectedRow(), 3) + "\n"
+                + "Fecha: " + txtFecha.getText() + "\n"
+                + "Hora: " + txtHora.getText() + "\n"
+                + "Estado: " + estadoActual + "\n\n"
+                + "Esta acción eliminará la cita de la base de datos.\n"
+                + "¿Está seguro?",
+                "Confirmar Eliminación",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+
         if (confirm == JOptionPane.YES_OPTION) {
             if (citaDAO.eliminar(selectedId)) {
                 JOptionPane.showMessageDialog(this, "✅ Cita eliminada permanentemente");
@@ -587,31 +599,81 @@ public class CitaForm extends JFrame {
         }
     }
 
+   
+
+    private void generarExcelPago(Cita cita, Cliente cliente, Vehiculo vehiculo) {
+
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Pago Cita");
+
+        // Encabezados
+        Row header = sheet.createRow(0);
+
+        header.createCell(0).setCellValue("Cliente");
+        header.createCell(1).setCellValue("Vehículo");
+        header.createCell(2).setCellValue("Fecha");
+        header.createCell(3).setCellValue("Hora");
+        header.createCell(4).setCellValue("Descripción");
+        header.createCell(5).setCellValue("Estado");
+
+        // Datos
+        Row row = sheet.createRow(1);
+
+        row.createCell(0).setCellValue(cliente.getNombre());
+        row.createCell(1).setCellValue(vehiculo.getPlaca());
+        row.createCell(2).setCellValue(cita.getFecha().toString());
+        row.createCell(3).setCellValue(cita.getHora().toString());
+        row.createCell(4).setCellValue(cita.getDescripcion());
+        row.createCell(5).setCellValue("PAGADA");
+
+        // Ajustar tamaño columnas
+        for (int i = 0; i < 6; i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        try (FileOutputStream fileOut
+                = new FileOutputStream("Pago_Cita_" + cita.getId() + ".xlsx")) {
+
+            workbook.write(fileOut);
+            workbook.close();
+
+            JOptionPane.showMessageDialog(null,
+                    "Excel generado correctamente");
+
+        } catch (IOException e) {
+
+            JOptionPane.showMessageDialog(null,
+                    "Error al generar Excel");
+
+            e.printStackTrace();
+        }
+    }
+
     private void pagarCita() {
         if (selectedId == -1) {
             JOptionPane.showMessageDialog(this, "Seleccione una cita para pagar");
             return;
         }
-        
+
         String estadoActual = (String) tableModel.getValueAt(tblCitas.getSelectedRow(), 6);
         if (estadoActual.equals("PAGADA")) {
             JOptionPane.showMessageDialog(this, "Esta cita ya está pagada", "Información", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
-        
-        int confirm = JOptionPane.showConfirmDialog(this, 
-            "¿Registrar pago de esta cita?\n\n" +
-            "Cliente: " + tableModel.getValueAt(tblCitas.getSelectedRow(), 3) + "\n" +
-            "Vehículo: " + tableModel.getValueAt(tblCitas.getSelectedRow(), 4) + "\n" +
-            "Descripción: " + txtDescripcion.getText() + "\n\n" +
-            "La cita se marcará como PAGADA y se registrará en el historial.", 
-            "Confirmar Pago", JOptionPane.YES_NO_OPTION);
-            
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "¿Registrar pago de esta cita?\n\n"
+                + "Cliente: " + tableModel.getValueAt(tblCitas.getSelectedRow(), 3) + "\n"
+                + "Vehículo: " + tableModel.getValueAt(tblCitas.getSelectedRow(), 4) + "\n"
+                + "Descripción: " + txtDescripcion.getText() + "\n\n"
+                + "La cita se marcará como PAGADA y se registrará en el historial.",
+                "Confirmar Pago", JOptionPane.YES_NO_OPTION);
+
         if (confirm == JOptionPane.YES_OPTION) {
             Cliente cliente = (Cliente) cbCliente.getSelectedItem();
             Vehiculo vehiculo = (Vehiculo) cbVehiculo.getSelectedItem();
             Usuario mecanico = (Usuario) cbMecanico.getSelectedItem();
-            
+
             Cita cita = new Cita();
             cita.setId(selectedId);
             cita.setFecha(LocalDate.parse(txtFecha.getText().trim()));
@@ -621,14 +683,22 @@ public class CitaForm extends JFrame {
             cita.setClienteId(cliente.getId());
             cita.setVehiculoId(vehiculo.getId());
             cita.setMecanicoId(mecanico.getId());
-            
+
             if (citaDAO.actualizar(cita)) {
+
                 registrarServicioConCostoObligatorio(cita);
+
+                // GENERAR EXCEL
+                generarExcelPago(cita, cliente, vehiculo);
+
                 limpiarFormulario();
                 cargarCitas();
-                JOptionPane.showMessageDialog(this, "✅ Cita marcada como PAGADA", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(this, "Error al registrar el pago", "Error", JOptionPane.ERROR_MESSAGE);
+
+                JOptionPane.showMessageDialog(this,
+                        "✅ Cita marcada como PAGADA",
+                        "Éxito",
+                        JOptionPane.INFORMATION_MESSAGE);
+
             }
         }
     }
@@ -637,59 +707,59 @@ public class CitaForm extends JFrame {
         Cliente cliente = clienteDAO.obtenerPorId(cita.getClienteId());
         Vehiculo vehiculo = vehiculoDAO.obtenerPorId(cita.getVehiculoId());
         Usuario mecanico = usuarioDAO.obtenerPorId(cita.getMecanicoId());
-        
+
         String clienteNombre = cliente != null ? cliente.getNombreCompleto() : "N/A";
         String vehiculoInfo = vehiculo != null ? vehiculo.getDescripcion() : "N/A";
         String mecanicoNombre = mecanico != null ? mecanico.getNombre() : "N/A";
-        
+
         double costo = 0;
         boolean costoValido = false;
-        
+
         while (!costoValido) {
             String costoStr = JOptionPane.showInputDialog(this,
-                "═══════════════════════════════════════════════════════\n" +
-                "        REGISTRO DE SERVICIO - CITA PAGADA\n" +
-                "═══════════════════════════════════════════════════════\n\n" +
-                "📋 DATOS DEL SERVICIO:\n" +
-                "───────────────────────────────────────────────────────\n" +
-                "  • Cliente:      " + clienteNombre + "\n" +
-                "  • Vehículo:     " + vehiculoInfo + "\n" +
-                "  • Mecánico:     " + mecanicoNombre + "\n" +
-                "  • Fecha:        " + cita.getFecha().toString() + "\n" +
-                "  • Descripción:  " + cita.getDescripcion() + "\n" +
-                "───────────────────────────────────────────────────────\n\n" +
-                "💰 Ingrese el COSTO del servicio (S/):\n" +
-                "(Ejemplo: 150.00)\n\n" +
-                "⚠️ Este campo es OBLIGATORIO.",
-                "Registrar Servicio - AutoRepar",
-                JOptionPane.QUESTION_MESSAGE);
-            
+                    "═══════════════════════════════════════════════════════\n"
+                    + "        REGISTRO DE SERVICIO - CITA PAGADA\n"
+                    + "═══════════════════════════════════════════════════════\n\n"
+                    + "📋 DATOS DEL SERVICIO:\n"
+                    + "───────────────────────────────────────────────────────\n"
+                    + "  • Cliente:      " + clienteNombre + "\n"
+                    + "  • Vehículo:     " + vehiculoInfo + "\n"
+                    + "  • Mecánico:     " + mecanicoNombre + "\n"
+                    + "  • Fecha:        " + cita.getFecha().toString() + "\n"
+                    + "  • Descripción:  " + cita.getDescripcion() + "\n"
+                    + "───────────────────────────────────────────────────────\n\n"
+                    + "💰 Ingrese el COSTO del servicio (S/):\n"
+                    + "(Ejemplo: 150.00)\n\n"
+                    + "⚠️ Este campo es OBLIGATORIO.",
+                    "Registrar Servicio - AutoRepar",
+                    JOptionPane.QUESTION_MESSAGE);
+
             if (costoStr == null || costoStr.trim().isEmpty()) {
                 JOptionPane.showMessageDialog(this,
-                    "❌ El costo es OBLIGATORIO.\n" +
-                    "Debe ingresar un monto válido para registrar el servicio.",
-                    "Costo Obligatorio", JOptionPane.WARNING_MESSAGE);
+                        "❌ El costo es OBLIGATORIO.\n"
+                        + "Debe ingresar un monto válido para registrar el servicio.",
+                        "Costo Obligatorio", JOptionPane.WARNING_MESSAGE);
                 continue;
             }
-            
+
             try {
                 costo = Double.parseDouble(costoStr.trim());
                 if (costo < 0) {
                     JOptionPane.showMessageDialog(this,
-                        "El costo no puede ser negativo.\nIngrese un valor válido.",
-                        "Error", JOptionPane.ERROR_MESSAGE);
+                            "El costo no puede ser negativo.\nIngrese un valor válido.",
+                            "Error", JOptionPane.ERROR_MESSAGE);
                     continue;
                 }
                 costoValido = true;
             } catch (NumberFormatException e) {
                 JOptionPane.showMessageDialog(this,
-                    "❌ Costo no válido.\n" +
-                    "Ingrese un número válido (ejemplo: 150.00 o 150).\n" +
-                    "No use letras ni caracteres especiales.",
-                    "Error de Formato", JOptionPane.ERROR_MESSAGE);
+                        "❌ Costo no válido.\n"
+                        + "Ingrese un número válido (ejemplo: 150.00 o 150).\n"
+                        + "No use letras ni caracteres especiales.",
+                        "Error de Formato", JOptionPane.ERROR_MESSAGE);
             }
         }
-        
+
         Servicio servicio = new Servicio();
         servicio.setFecha(cita.getFecha());
         servicio.setVehiculoId(cita.getVehiculoId());
@@ -697,21 +767,21 @@ public class CitaForm extends JFrame {
         servicio.setTipo("Servicio - Cita Pagada #" + cita.getId());
         servicio.setDescripcion(cita.getDescripcion());
         servicio.setCosto(costo);
-        
+
         if (servicioDAO.insertar(servicio)) {
             JOptionPane.showMessageDialog(this,
-                "✅ SERVICIO REGISTRADO EN EL HISTORIAL\n\n" +
-                "   • Vehículo: " + vehiculoInfo + "\n" +
-                "   • Costo: S/ " + String.format("%.2f", costo) + "\n" +
-                "   • Estado: Cita Pagada\n\n" +
-                "El servicio ha sido guardado correctamente.",
-                "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                    "✅ SERVICIO REGISTRADO EN EL HISTORIAL\n\n"
+                    + "   • Vehículo: " + vehiculoInfo + "\n"
+                    + "   • Costo: S/ " + String.format("%.2f", costo) + "\n"
+                    + "   • Estado: Cita Pagada\n\n"
+                    + "El servicio ha sido guardado correctamente.",
+                    "Éxito", JOptionPane.INFORMATION_MESSAGE);
         } else {
             JOptionPane.showMessageDialog(this,
-                "❌ Error al registrar el servicio.\n" +
-                "El pago se registró pero el servicio no se guardó.\n" +
-                "Por favor, regístrelo manualmente en el historial.",
-                "Error", JOptionPane.ERROR_MESSAGE);
+                    "❌ Error al registrar el servicio.\n"
+                    + "El pago se registró pero el servicio no se guardó.\n"
+                    + "Por favor, regístrelo manualmente en el historial.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 

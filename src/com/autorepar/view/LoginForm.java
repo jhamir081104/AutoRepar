@@ -2,6 +2,7 @@ package com.autorepar.view;
 
 import com.autorepar.dao.UsuarioDAO;
 import com.autorepar.model.Usuario;
+import com.google.common.base.Strings;
 import javax.swing.*;
 import java.awt.*;
 
@@ -111,11 +112,21 @@ public class LoginForm extends JFrame {
         String email = txtEmail.getText().trim();
         String password = new String(txtPassword.getPassword());
 
-        if (email.isEmpty() || password.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                "Por favor complete todos los campos",
-                "Campos Vacíos",
-                JOptionPane.WARNING_MESSAGE);
+        //validacion con Guava
+        if (Strings.isNullOrEmpty(email) || Strings.isNullOrEmpty(password)) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Por favor complete todos los campos",
+                    "Campos Vacíos",
+                    JOptionPane.WARNING_MESSAGE
+            );
+
+            return;
+        }
+        
+        //validacion basica de formato email
+        if(!email.contains("@")){
+            JOptionPane.showMessageDialog(this, "ingrese un email valido", "Email invalido", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
@@ -131,7 +142,7 @@ public class LoginForm extends JFrame {
             this.dispose();
         } else {
             JOptionPane.showMessageDialog(this,
-                "Email o contraseña incorrectos.\n\nCredenciales por defecto:\nEmail: admin@autorepar.com\nContraseña: admin123",
+                "Email o contraseña incorrectos",
                 "Error de Autenticación",
                 JOptionPane.ERROR_MESSAGE);
             txtPassword.setText("");
