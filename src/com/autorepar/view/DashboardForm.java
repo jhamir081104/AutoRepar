@@ -111,7 +111,7 @@ public class DashboardForm extends JFrame {
                 BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
 
-        JLabel lblTituloSeccion = new JLabel("📋 Citas Activas (no pagadas)");
+        JLabel lblTituloSeccion = new JLabel(" Citas Activas (no pagadas)");
         lblTituloSeccion.setFont(new Font("Arial", Font.BOLD, 14));
         lblTituloSeccion.setForeground(new Color(18, 38, 68)); 
         borderPanel.add(lblTituloSeccion, BorderLayout.NORTH);
